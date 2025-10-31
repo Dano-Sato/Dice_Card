@@ -130,19 +130,10 @@ class GameState:
 
 
 INITIAL_DECK_BLUEPRINT: list[str] = (
-    ["clone"] * 2
-    + ["mirror"] * 2
-    + ["stasis"] * 2
-    + ["reroll"] * 2
-    + ["tinker"] * 2
-    + ["odd_attack"] * 3
-    + ["even_shield"] * 3
-    + ["strafe"] * 2
-    + ["strike"] * 2
-    + ["fortify"] * 2
-    + ["pair_shot"] * 2
-    + ["one_shot"] * 2
-    + ["double_guard"] * 2
+    ["reroll"] * 5
+    + ["odd_attack"] * 5
+    + ["even_shield"] * 5
+
 )
 
 
@@ -322,7 +313,7 @@ class DiceCardScene(Scene):
 
         self.log_box = longTextObj(
             "카드를 위로 드래그하면 사용됩니다.",
-            pos=RPoint(40, 360),
+            pos=RPoint(40, 370),
             size=20,
             color=Cs.white,
             textWidth=340,
@@ -489,7 +480,7 @@ class DiceCardScene(Scene):
     def add_log(self, message: str) -> None:
         lines = self.log_box.text.split("\n") if self.log_box.text else []
         lines.append(message)
-        self.log_box.text = "\n".join(lines[-7:])
+        self.log_box.text = "\n".join(lines[-5:])
 
     def set_confirm_button_enabled(self, enabled: bool) -> None:
         self.confirm_selection_button.enabled = enabled
