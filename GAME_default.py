@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from collections import Counter
 from dataclasses import dataclass, replace
 from typing import Any, Callable
 
@@ -71,6 +72,48 @@ CARD_LIBRARY: dict[str, CardData] = {
         name="Even Shield",
         effect="even_shield",
         description="현재 보유한 짝수 주사위 눈의 합만큼 방어력을 얻는다.",
+        targets=0,
+        card_type="방어",
+    ),
+    "strafe": CardData(
+        name="스트레이프",
+        effect="strafe",
+        description="Small Straight일 경우 30, Big Straight일 경우 60 데미지",
+        targets=0,
+        card_type="공격",
+    ),
+    "strike": CardData(
+        name="스트라이크",
+        effect="strike",
+        description="주사위의 합으로 공격한다.",
+        targets=0,
+        card_type="공격",
+    ),
+    "fortify": CardData(
+        name="Fortify",
+        effect="fortify",
+        description="주사위의 합으로 방어한다.",
+        targets=0,
+        card_type="방어",
+    ),
+    "pair_shot": CardData(
+        name="Pair Shot",
+        effect="pair_shot",
+        description="주사위가 페어일 경우 15 데미지",
+        targets=0,
+        card_type="공격",
+    ),
+    "one_shot": CardData(
+        name="One Shot",
+        effect="one_shot",
+        description="1 주사위당 15 데미지",
+        targets=0,
+        card_type="공격",
+    ),
+    "double_guard": CardData(
+        name="Double Guard",
+        effect="double_guard",
+        description="2 주사위당 10 방어",
         targets=0,
         card_type="방어",
     ),
@@ -308,6 +351,12 @@ class DiceCardScene(Scene):
             + ["tinker"] * 2
             + ["odd_attack"] * 3
             + ["even_shield"] * 3
+            + ["strafe"] * 2
+            + ["strike"] * 2
+            + ["fortify"] * 2
+            + ["pair_shot"] * 2
+            + ["one_shot"] * 2  
+            + ["double_guard"] * 2
         )
 
         self.reset_combat(initial=True)
@@ -606,6 +655,50 @@ class DiceCardScene(Scene):
             block = sum(die["value"] for die in self.dice if die["value"] % 2 == 0)
             self.player_block += block
             self.add_log(f"Even Shield! {block}의 방어를 얻었습니다.")
+        elif card.effect == "strafe":
+            values = [die["value"] for die in self.dice]
+            value_set = set(values)
+            big_straights = ({1, 2, 3, 4, 5}, {2, 3, 4, 5, 6})
+            small_straights = ({1, 2, 3, 4}, {2, 3, 4, 5}, {3, 4, 5, 6})
+            damage = 0
+            if any(straight.issubset(value_set) for straight in big_straights):
+                damage = 60
+                self.add_log("스트레이프! Big Straight으로 60 피해를 줍니다.")
+            elif any(straight.issubset(value_set) for straight in small_straights):
+                damage = 30
+                self.add_log("스트레이프! Small Straight으로 30 피해를 줍니다.")
+            else:
+                self.add_log("스트레이프! 스트레이트가 없어 공격에 실패했습니다.")
+            self.deal_damage(damage, source="스트레이프")
+        elif card.effect == "strike":
+            damage = sum(die["value"] for die in self.dice)
+            self.add_log(f"스트라이크! 주사위 합 {damage}으로 공격합니다.")
+            self.deal_damage(damage, source="스트라이크")
+        elif card.effect == "fortify":
+            block = sum(die["value"] for die in self.dice)
+            self.player_block += block
+            self.add_log(f"Fortify! 주사위 합 {block}의 방어를 얻었습니다.")
+        elif card.effect == "pair_shot":
+            counts = Counter(die["value"] for die in self.dice)
+            if any(count >= 2 for count in counts.values()):
+                damage = 15
+                self.add_log("Pair Shot! 페어를 맞춰 15 피해를 줍니다.")
+                self.deal_damage(damage, source="Pair Shot")
+            else:
+                self.add_log("Pair Shot! 페어가 없어 공격에 실패했습니다.")
+        elif card.effect == "one_shot":
+            ones = sum(1 for die in self.dice if die["value"] == 1)
+            damage = ones * 15
+            self.add_log(f"One Shot! 주사위 {ones}개로 {damage} 피해를 가합니다.")
+            self.deal_damage(damage, source="One Shot")
+        elif card.effect == "double_guard":
+            twos = sum(1 for die in self.dice if die["value"] == 2)
+            block = twos * 10
+            if block > 0:
+                self.player_block += block
+                self.add_log(f"Double Guard! {twos}개의 주사위로 {block} 방어를 얻었습니다.")
+            else:
+                self.add_log("Double Guard! 방어를 얻을 수 있는 주사위가 부족합니다.")
         else:
             self.add_log("카드 효과가 제대로 적용되지 않았습니다.")
 
