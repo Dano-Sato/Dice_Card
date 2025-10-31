@@ -120,6 +120,32 @@ CARD_LIBRARY: dict[str, CardData] = {
 }
 
 
+@dataclass
+class GameState:
+    deck_blueprint: list[str]
+    gold: int = 10
+
+    def add_card(self, card_key: str) -> None:
+        self.deck_blueprint.append(card_key)
+
+
+INITIAL_DECK_BLUEPRINT: list[str] = (
+    ["clone"] * 2
+    + ["mirror"] * 2
+    + ["stasis"] * 2
+    + ["reroll"] * 2
+    + ["tinker"] * 2
+    + ["odd_attack"] * 3
+    + ["even_shield"] * 3
+    + ["strafe"] * 2
+    + ["strike"] * 2
+    + ["fortify"] * 2
+    + ["pair_shot"] * 2
+    + ["one_shot"] * 2
+    + ["double_guard"] * 2
+)
+
+
 class HandCardWidget(rectObj):
     WIDTH = 160
     HEIGHT = 220
@@ -234,6 +260,10 @@ class PendingCard:
 class DiceCardScene(Scene):
     HAND_LIMIT = 5
 
+    def __init__(self, game_state: GameState) -> None:
+        super().__init__()
+        self.game_state = game_state
+
     def initOnce(self) -> None:
         screen_rect = Rs.screenRect()
         self.background = rectObj(screen_rect, color=Cs.darkslategray)
@@ -251,6 +281,7 @@ class DiceCardScene(Scene):
         self.enemy_label = textObj("적 HP", pos=(40, 230), size=26, color=Cs.white)
         self.enemy_intent_label = textObj("적 의도", pos=(40, 270), size=24, color=Cs.tiffanyBlue)
         self.deck_label = textObj("덱", pos=(40, 306), size=22, color=Cs.lightgrey)
+        self.gold_label = textObj("골드 10", pos=(40, 340), size=22, color=Cs.yellow)
 
         dice_start_x = 420
         dice_y = 180
@@ -343,22 +374,6 @@ class DiceCardScene(Scene):
         self.enemy_intent: tuple[str, int] = ("attack", 6)
         self.turn_count = 1
 
-        self.deck_blueprint = (
-            ["clone"] * 2
-            + ["mirror"] * 2
-            + ["stasis"] * 2
-            + ["reroll"] * 2
-            + ["tinker"] * 2
-            + ["odd_attack"] * 3
-            + ["even_shield"] * 3
-            + ["strafe"] * 2
-            + ["strike"] * 2
-            + ["fortify"] * 2
-            + ["pair_shot"] * 2
-            + ["one_shot"] * 2  
-            + ["double_guard"] * 2
-        )
-
         self.reset_combat(initial=True)
 
     def init(self) -> None:
@@ -375,7 +390,7 @@ class DiceCardScene(Scene):
         self.pending_card = None
         self.hand.clear()
         self.hand_widgets.clear()
-        self.draw_pile = [CARD_LIBRARY[key].clone() for key in self.deck_blueprint]
+        self.draw_pile = [CARD_LIBRARY[key].clone() for key in self.game_state.deck_blueprint]
         random.shuffle(self.draw_pile)
         self.discard_pile.clear()
         for die in self.dice:
@@ -464,6 +479,7 @@ class DiceCardScene(Scene):
         intent_name = "공격" if intent_type == "attack" else "방어"
         self.enemy_intent_label.text = f"적 의도: {intent_name} {intent_value}"
         self.update_deck_label()
+        self.gold_label.text = f"골드 {self.game_state.gold}"
 
     def update_deck_label(self) -> None:
         self.deck_label.text = (
@@ -719,8 +735,15 @@ class DiceCardScene(Scene):
         if self.game_over:
             return
         self.game_over = True
-        self.add_log("적을 쓰러뜨렸습니다! 새 전투로 계속 플레이하세요.")
-        self.instruction_text.text = "승리했습니다!"
+        reward = random.randint(5, 8)
+        self.game_state.gold += reward
+        self.add_log(
+            f"적을 쓰러뜨렸습니다! {reward} 골드를 획득했습니다."
+        )
+        self.instruction_text.text = "승리했습니다! 상점으로 이동합니다."
+        self.update_interface()
+        Scenes.shopScene.queue_reward(reward)
+        Rs.setCurrentScene(Scenes.shopScene)
 
     def on_defeat(self) -> None:
         if self.game_over:
@@ -789,6 +812,7 @@ class DiceCardScene(Scene):
         self.enemy_label.draw()
         self.enemy_intent_label.draw()
         self.deck_label.draw()
+        self.gold_label.draw()
         for button in self.dice_buttons:
             button.draw()
         self.play_zone.draw()
@@ -802,8 +826,192 @@ class DiceCardScene(Scene):
             widget.draw()
 
 
+class ShopCardView:
+    WIDTH = 240
+    HEIGHT = 320
+
+    def __init__(self, card_key: str, card: CardData, price: int, scene: "ShopScene") -> None:
+        self.card_key = card_key
+        self.card = card
+        self.price = price
+        self.scene = scene
+        self.sold = False
+
+        self.container = rectObj(
+            pygame.Rect(0, 0, self.WIDTH, self.HEIGHT),
+            color=Cs.dark(Cs.grey),
+            edge=4,
+            radius=20,
+        )
+        self.title = textObj(card.name, size=28, color=Cs.white)
+        self.title.setParent(self.container, depth=1)
+        self.title.centerx = self.container.offsetRect.centerx
+        self.title.y = 18
+
+        self.type_text = textObj(card.card_type, size=20, color=Cs.lightgrey)
+        self.type_text.setParent(self.container, depth=1)
+        self.type_text.centerx = self.container.offsetRect.centerx
+        self.type_text.y = self.title.rect.bottom + 6
+
+        self.desc = longTextObj(
+            card.description,
+            pos=RPoint(0, 0),
+            size=20,
+            color=Cs.white,
+            textWidth=self.WIDTH - 40,
+        )
+        self.desc.setParent(self.container, depth=1)
+        self.desc.centerx = self.container.offsetRect.centerx
+        self.desc.y = self.type_text.rect.bottom + 14
+
+        button_rect = pygame.Rect(0, 0, self.WIDTH - 40, 54)
+        self.buy_button = textButton(
+            self._button_text(),
+            button_rect,
+            size=24,
+            radius=16,
+            color=Cs.orange,
+            textColor=Cs.black,
+        )
+        self.buy_button.connect(self.on_buy)
+        self.buy_button.setParent(self.container, depth=1)
+        self.buy_button.centerx = self.container.offsetRect.centerx
+        self.buy_button.midbottom = self.container.offsetRect.midbottom - RPoint(0, 18)
+    def set_position(self, x: float, y: float) -> None:
+        self.container.pos = RPoint(x, y)
+
+    def on_buy(self) -> None:
+        self.scene.attempt_purchase(self)
+
+    def mark_sold(self) -> None:
+        self.sold = True
+        self.buy_button.enabled = False
+        self.buy_button.text = "구매 완료"
+        self.buy_button.color = Cs.dark(Cs.grey)
+
+    def _button_text(self) -> str:
+        return f"구매 ({self.price}골드)"
+
+    def update(self) -> None:
+        self.buy_button.update()
+
+    def draw(self) -> None:
+        self.container.draw()
+        self.title.draw()
+        self.type_text.draw()
+        self.desc.draw()
+        self.buy_button.draw()
+
+
+class ShopScene(Scene):
+    CARD_PRICE = 5
+
+    def __init__(self, game_state: GameState) -> None:
+        super().__init__()
+        self.game_state = game_state
+        self.cards_for_sale: list[ShopCardView] = []
+        self.pending_reward: int | None = None
+
+    def initOnce(self) -> None:
+        screen_rect = Rs.screenRect()
+        self.background = rectObj(screen_rect, color=Cs.slategray)
+        self.title = textObj("상점", pos=(60, 60), size=52, color=Cs.white)
+        self.subtitle = textObj(
+            "승리 보상으로 새로운 카드를 구매하세요!",
+            pos=(60, 120),
+            size=26,
+            color=Cs.lightgrey,
+        )
+        self.gold_label = textObj("골드 10", pos=(60, 170), size=28, color=Cs.yellow)
+        self.message = longTextObj(
+            "",
+            pos=RPoint(60, 210),
+            size=22,
+            color=Cs.white,
+            textWidth=460,
+        )
+
+        self.continue_button = textButton(
+            "다음 전투 시작",
+            pygame.Rect(60, 760, 240, 70),
+            size=26,
+            radius=20,
+            color=Cs.mint,
+            textColor=Cs.black,
+        )
+        self.continue_button.connect(self.start_next_combat)
+
+    def init(self) -> None:
+        if self.pending_reward is not None:
+            self._open_shop()
+
+    def queue_reward(self, reward: int) -> None:
+        self.pending_reward = reward
+        if getattr(self, "initiated", False):
+            self._open_shop()
+
+    def _open_shop(self) -> None:
+        reward = self.pending_reward if self.pending_reward is not None else 0
+        self.pending_reward = None
+        self.message.text = f"전투에서 {reward} 골드를 획득했습니다. 원하는 카드를 구매하세요."
+        self.generate_cards()
+        self.update_gold_label()
+
+    def update_gold_label(self) -> None:
+        self.gold_label.text = f"골드 {self.game_state.gold}"
+
+    def generate_cards(self) -> None:
+        self.cards_for_sale.clear()
+
+        available_keys = list(CARD_LIBRARY.keys())
+        random.shuffle(available_keys)
+        selected_keys = available_keys[:3]
+
+        start_x = 520
+        spacing = 280
+        y = 260
+        for index, key in enumerate(selected_keys):
+            card = CARD_LIBRARY[key].clone()
+            view = ShopCardView(key, card, self.CARD_PRICE, self)
+            view.set_position(start_x + index * spacing, y)
+            self.cards_for_sale.append(view)
+
+    def attempt_purchase(self, view: ShopCardView) -> None:
+        if view.sold:
+            return
+        if self.game_state.gold < view.price:
+            self.message.text = "골드가 부족합니다."
+            return
+        self.game_state.gold -= view.price
+        self.game_state.add_card(view.card_key)
+        view.mark_sold()
+        self.update_gold_label()
+        self.message.text = f"{view.card.name} 카드를 덱에 추가했습니다."
+
+    def start_next_combat(self) -> None:
+        Scenes.mainScene.reset_combat()
+        Rs.setCurrentScene(Scenes.mainScene)
+
+    def update(self) -> None:
+        for view in self.cards_for_sale:
+            view.update()
+        self.continue_button.update()
+
+    def draw(self) -> None:
+        self.background.draw()
+        self.title.draw()
+        self.subtitle.draw()
+        self.gold_label.draw()
+        self.message.draw()
+        for view in self.cards_for_sale:
+            view.draw()
+        self.continue_button.draw()
+
+
 class Scenes:
-    mainScene = DiceCardScene()
+    game_state = GameState(deck_blueprint=list(INITIAL_DECK_BLUEPRINT))
+    mainScene = DiceCardScene(game_state)
+    shopScene = ShopScene(game_state)
 
 
 if __name__ == "__main__":
