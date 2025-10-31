@@ -250,6 +250,8 @@ class PendingCard:
 
 class DiceCardScene(Scene):
     HAND_LIMIT = 5
+    PLAYER_MAX_HP = 40
+    ENEMY_MAX_HP = 50
 
     def __init__(self, game_state: GameState) -> None:
         super().__init__()
@@ -268,9 +270,91 @@ class DiceCardScene(Scene):
         )
 
         self.turn_label = textObj("턴 1", pos=(40, 150), size=26, color=Cs.yellow)
-        self.player_label = textObj("플레이어 HP", pos=(40, 190), size=26, color=Cs.white)
-        self.enemy_label = textObj("적 HP", pos=(40, 230), size=26, color=Cs.white)
-        self.enemy_intent_label = textObj("적 의도", pos=(40, 270), size=24, color=Cs.tiffanyBlue)
+        self.player_label = textObj("플레이어", pos=(40, 190), size=26, color=Cs.white)
+
+        player_bar_rect = pygame.Rect(40, 226, 360, 30)
+        self.player_hp_bar_bg = rectObj(
+            player_bar_rect,
+            color=Cs.dark(Cs.grey),
+            edge=3,
+            radius=18,
+        )
+        player_fill_rect = player_bar_rect.inflate(-8, -8)
+        self.player_hp_bar_fill = rectObj(
+            player_fill_rect,
+            color=Cs.lime,
+            radius=14,
+        )
+        self.player_hp_bar_fill_origin = RPoint(player_fill_rect.topleft)
+        self.player_hp_bar_fill_max_width = player_fill_rect.width
+        self.player_hp_bar_fill_height = player_fill_rect.height
+        self.player_hp_value = textObj(
+            f"{self.PLAYER_MAX_HP}/{self.PLAYER_MAX_HP}",
+            size=20,
+            color=Cs.white,
+        )
+        self.player_hp_value.center = self.player_hp_bar_bg.center
+        self.player_block_label = textObj(
+            "방어 0",
+            pos=(40, player_bar_rect.bottom + 12),
+            size=22,
+            color=Cs.skyblue,
+        )
+
+        enemy_panel_rect = pygame.Rect(screen_rect.width - 360, 150, 320, 200)
+        self.enemy_panel = rectObj(
+            enemy_panel_rect,
+            color=Cs.dark(Cs.grey),
+            edge=4,
+            radius=26,
+        )
+        enemy_content_x = enemy_panel_rect.x + 24
+        enemy_content_y = enemy_panel_rect.y + 22
+        self.enemy_label = textObj(
+            "적",
+            pos=(enemy_content_x, enemy_content_y),
+            size=26,
+            color=Cs.white,
+        )
+        enemy_bar_rect = pygame.Rect(
+            enemy_content_x,
+            enemy_content_y + 40,
+            enemy_panel_rect.width - 48,
+            28,
+        )
+        self.enemy_hp_bar_bg = rectObj(
+            enemy_bar_rect,
+            color=Cs.dark(Cs.grey),
+            edge=3,
+            radius=18,
+        )
+        enemy_fill_rect = enemy_bar_rect.inflate(-8, -8)
+        self.enemy_hp_bar_fill = rectObj(
+            enemy_fill_rect,
+            color=Cs.crimson,
+            radius=14,
+        )
+        self.enemy_hp_bar_fill_origin = RPoint(enemy_fill_rect.topleft)
+        self.enemy_hp_bar_fill_max_width = enemy_fill_rect.width
+        self.enemy_hp_bar_fill_height = enemy_fill_rect.height
+        self.enemy_hp_value = textObj(
+            f"{self.ENEMY_MAX_HP}/{self.ENEMY_MAX_HP}",
+            size=20,
+            color=Cs.white,
+        )
+        self.enemy_hp_value.center = self.enemy_hp_bar_bg.center
+        self.enemy_block_label = textObj(
+            "방어 0",
+            pos=(enemy_content_x, enemy_bar_rect.bottom + 12),
+            size=22,
+            color=Cs.skyblue,
+        )
+        self.enemy_intent_label = textObj(
+            "적 의도",
+            pos=(enemy_content_x, enemy_bar_rect.bottom + 48),
+            size=24,
+            color=Cs.tiffanyBlue,
+        )
         self.deck_label = textObj("덱", pos=(40, 306), size=22, color=Cs.lightgrey)
         self.gold_label = textObj("골드 10", pos=(40, 340), size=22, color=Cs.yellow)
 
@@ -358,9 +442,9 @@ class DiceCardScene(Scene):
         self.pending_card: PendingCard | None = None
         self.game_over = False
 
-        self.player_hp = 40
+        self.player_hp = self.PLAYER_MAX_HP
         self.player_block = 0
-        self.enemy_hp = 45
+        self.enemy_hp = self.ENEMY_MAX_HP
         self.enemy_block = 0
         self.enemy_intent: tuple[str, int] = ("attack", 6)
         self.turn_count = 1
@@ -373,9 +457,9 @@ class DiceCardScene(Scene):
     # -- State helpers -------------------------------------------------
     def reset_combat(self, *, initial: bool = False) -> None:
         self.game_over = False
-        self.player_hp = 40
+        self.player_hp = self.PLAYER_MAX_HP
         self.player_block = 0
-        self.enemy_hp = 50
+        self.enemy_hp = self.ENEMY_MAX_HP
         self.enemy_block = 0
         self.turn_count = 1
         self.pending_card = None
@@ -460,17 +544,62 @@ class DiceCardScene(Scene):
 
     def update_interface(self) -> None:
         self.turn_label.text = f"턴 {self.turn_count}"
-        self.player_label.text = (
-            f"플레이어 HP {self.player_hp}/40 · 방어 {self.player_block}"
+        self.player_label.text = "플레이어"
+        self._update_health_bar(
+            self.player_hp,
+            self.PLAYER_MAX_HP,
+            self.player_hp_bar_fill,
+            self.player_hp_bar_fill_origin,
+            self.player_hp_bar_fill_max_width,
+            self.player_hp_bar_fill_height,
         )
-        self.enemy_label.text = (
-            f"적 HP {self.enemy_hp}/50 · 방어 {self.enemy_block}"
+        self.player_hp_value.text = f"{self.player_hp}/{self.PLAYER_MAX_HP}"
+        self.player_hp_value.center = self.player_hp_bar_bg.center
+        self.player_block_label.text = f"방어 {self.player_block}"
+
+        self.enemy_label.text = "적"
+        self._update_health_bar(
+            self.enemy_hp,
+            self.ENEMY_MAX_HP,
+            self.enemy_hp_bar_fill,
+            self.enemy_hp_bar_fill_origin,
+            self.enemy_hp_bar_fill_max_width,
+            self.enemy_hp_bar_fill_height,
         )
+        self.enemy_hp_value.text = f"{self.enemy_hp}/{self.ENEMY_MAX_HP}"
+        self.enemy_hp_value.center = self.enemy_hp_bar_bg.center
+        self.enemy_block_label.text = f"방어 {self.enemy_block}"
         intent_type, intent_value = self.enemy_intent
         intent_name = "공격" if intent_type == "attack" else "방어"
         self.enemy_intent_label.text = f"적 의도: {intent_name} {intent_value}"
         self.update_deck_label()
         self.gold_label.text = f"골드 {self.game_state.gold}"
+
+    def _update_health_bar(
+        self,
+        value: int,
+        maximum: int,
+        bar_fill: rectObj,
+        origin: RPoint,
+        max_width: int,
+        height: int,
+    ) -> None:
+        clamped = max(0, min(value, maximum))
+        if maximum <= 0:
+            ratio = 0
+        else:
+            ratio = clamped / maximum
+        width = int(max_width * ratio)
+        if width <= 0 or ratio <= 0:
+            bar_fill.alpha = 0
+        else:
+            bar_fill.alpha = 255
+            bar_fill.rect = pygame.Rect(
+                int(origin.x),
+                int(origin.y),
+                max(1, width),
+                height,
+            )
 
     def update_deck_label(self) -> None:
         self.deck_label.text = (
@@ -800,7 +929,18 @@ class DiceCardScene(Scene):
         self.subtitle.draw()
         self.turn_label.draw()
         self.player_label.draw()
+        self.player_hp_bar_bg.draw()
+        if self.player_hp_bar_fill.alpha:
+            self.player_hp_bar_fill.draw()
+        self.player_hp_value.draw()
+        self.player_block_label.draw()
+        self.enemy_panel.draw()
         self.enemy_label.draw()
+        self.enemy_hp_bar_bg.draw()
+        if self.enemy_hp_bar_fill.alpha:
+            self.enemy_hp_bar_fill.draw()
+        self.enemy_hp_value.draw()
+        self.enemy_block_label.draw()
         self.enemy_intent_label.draw()
         self.deck_label.draw()
         self.gold_label.draw()
