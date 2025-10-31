@@ -232,7 +232,7 @@ class PendingCard:
 
 
 class DiceCardScene(Scene):
-    HAND_LIMIT = 4
+    HAND_LIMIT = 5
 
     def initOnce(self) -> None:
         screen_rect = Rs.screenRect()
