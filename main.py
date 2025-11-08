@@ -104,6 +104,7 @@ class HandCardWidget(rectObj):
         self.scene = scene
         self.home_pos = RPoint(0, 0)
         self.dragging = False
+        self.is_hovered = False
 
         self.base_color, self.hover_color = card_color_palette(card.card_type)
 
@@ -192,6 +193,7 @@ class HandCardWidget(rectObj):
     def handle_events(self) -> None:
         self._update_idle_motion()
         is_hovered = self.collideMouse()
+        self.is_hovered = is_hovered
         if self.scene is None:
             if is_hovered:
                 self.color_overlay.color = self.hover_color
@@ -1250,6 +1252,10 @@ class UpgradeCardOption:
         self.upgraded_key = f"{base_key}_plus"
         self.scene = scene
 
+        base_card = CARD_LIBRARY[self.base_key].clone()
+        self.base_card_widget = HandCardWidget(base_card, scene=None)
+        self.base_card_widget.color_overlay.alpha = 50
+
         upgraded_card = CARD_LIBRARY[self.upgraded_key].clone()
         self.card_widget = HandCardWidget(upgraded_card, scene=None)
         self.card_widget.color_overlay.alpha = 50
@@ -1272,6 +1278,8 @@ class UpgradeCardOption:
 
     def set_position(self, x: float, y: float) -> None:
         self.card_widget.pos = RPoint(x, y)
+        gap = 40
+        self.base_card_widget.pos = RPoint(1500, y)
 
     def on_select(self) -> None:
         self.scene.apply_upgrade(self)
@@ -1291,12 +1299,13 @@ class UpgradeCardOption:
         self.card_widget.color_overlay.alpha = 140
 
     def update(self) -> None:
-        if self.upgrade_button.enabled:
-            self.card_widget.handle_events()
+        self.card_widget.handle_events()
         self.upgrade_button.update()
 
     def draw(self) -> None:
         self.card_widget.draw()
+        if self.card_widget.is_hovered:
+            self.base_card_widget.draw()
         self.upgrade_button.draw()
 
 
