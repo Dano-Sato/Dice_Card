@@ -385,7 +385,7 @@ class DiceCardScene(Scene):
             pos=RPoint(40, 370),
             size=20,
             color=Cs.white,
-            textWidth=340,
+            textWidth=500,
         )
         self.instruction_text = textObj("", pos=(40, 550), size=24, color=Cs.orange)
 
