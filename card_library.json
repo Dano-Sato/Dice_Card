@@ -1,89 +1,89 @@
 {
   "clone": {
-    "name": "눈 복제",
+    "name": "Pip Clone",
     "effect": "clone",
-    "description": "주사위 2개를 선택한 뒤, 첫 주사위의 눈을 나중 주사위에 복제한다.",
+    "description": "Choose two dice and copy the first die's value onto the second.",
     "targets": 2,
-    "card_type": "조작"
+    "card_type": "Manipulation"
   },
   "mirror": {
-    "name": "미러 주사위",
+    "name": "Mirror Dice",
     "effect": "mirror",
-    "description": "선택한 주사위들을 반전한다 (1↔6, 2↔5, 3↔4).",
+    "description": "Invert the selected dice (1↔6, 2↔5, 3↔4).",
     "targets": 1,
-    "card_type": "조작",
+    "card_type": "Manipulation",
     "allow_multi_select": true
   },
   "stasis": {
     "name": "Stasis",
     "effect": "stasis",
-    "description": "선택한 주사위들을 다음 턴 시작까지 고정한다.",
+    "description": "Freeze the selected dice until the start of your next turn.",
     "targets": 1,
-    "card_type": "조작",
+    "card_type": "Manipulation",
     "allow_multi_select": true
   },
   "tinker": {
     "name": "Tinker",
     "effect": "tinker",
-    "description": "선택한 주사위의 눈을 1 올린다. (6은 그대로)",
+    "description": "Increase the value of the selected dice by 1 (dice showing 6 stay 6).",
     "targets": 1,
-    "card_type": "조작",
+    "card_type": "Manipulation",
     "allow_multi_select": true
   },
   "reroll": {
     "name": "Reroll",
     "effect": "reroll",
-    "description": "선택한 주사위들을 다시 굴립니다.",
+    "description": "Reroll the selected dice.",
     "targets": 1,
-    "card_type": "조작",
+    "card_type": "Manipulation",
     "allow_multi_select": true
   },
   "odd_attack": {
     "name": "Odd Attack",
     "effect": "odd_attack",
-    "description": "현재 보유한 홀수 주사위 눈의 합만큼 적을 공격한다.",
-    "card_type": "공격"
+    "description": "Deal damage equal to the sum of all odd dice.",
+    "card_type": "Attack"
   },
   "even_shield": {
     "name": "Even Shield",
     "effect": "even_shield",
-    "description": "현재 보유한 짝수 주사위 눈의 합만큼 방어력을 얻는다.",
-    "card_type": "방어"
+    "description": "Gain block equal to the sum of all even dice.",
+    "card_type": "Defense"
   },
   "strafe": {
-    "name": "스트레이프",
+    "name": "Strafe",
     "effect": "strafe",
-    "description": "Small Straight일 경우 30, Big Straight일 경우 60 데미지",
-    "card_type": "공격"
+    "description": "Deal 30 damage with a Small Straight or 60 damage with a Big Straight.",
+    "card_type": "Attack"
   },
   "strike": {
-    "name": "스트라이크",
+    "name": "Strike",
     "effect": "strike",
-    "description": "주사위의 합으로 공격한다.",
-    "card_type": "공격"
+    "description": "Deal damage equal to the sum of all dice.",
+    "card_type": "Attack"
   },
   "fortify": {
     "name": "Fortify",
     "effect": "fortify",
-    "description": "주사위의 합으로 방어한다.",
-    "card_type": "방어"
+    "description": "Gain block equal to the sum of all dice.",
+    "card_type": "Defense"
   },
   "pair_shot": {
     "name": "Pair Shot",
     "effect": "pair_shot",
-    "description": "주사위가 페어일 경우 15 데미지",
-    "card_type": "공격"
+    "description": "Deal 15 damage if you have any pair of dice.",
+    "card_type": "Attack"
   },
   "one_shot": {
     "name": "One Shot",
     "effect": "one_shot",
-    "description": "1 주사위당 15 데미지",
-    "card_type": "공격"
+    "description": "Deal 15 damage for each die showing 1.",
+    "card_type": "Attack"
   },
   "double_guard": {
     "name": "Double Guard",
     "effect": "double_guard",
-    "description": "2 주사위당 10 방어",
-    "card_type": "방어"
+    "description": "Gain 10 block for each die showing 2.",
+    "card_type": "Defense"
   }
 }

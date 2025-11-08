@@ -74,21 +74,21 @@ INITIAL_DECK_BLUEPRINT: list[str] = (
 
 def card_color_palette(card_type: str) -> tuple[tuple[int, int, int], tuple[int, int, int]]:
     base_color = Cs.dark(Cs.steelblue)
-    if card_type == "공격":
+    if card_type == "Attack":
         base_color = Cs.dark(Cs.red)
-    elif card_type == "방어":
-        base_color = Cs.dark(Cs.red)
-    elif card_type == "강화":
+    elif card_type == "Defense":
+        base_color = Cs.dark(Cs.skyblue)
+    elif card_type == "Enhance":
         base_color = Cs.dark(Cs.purple)
-    elif card_type == "조작":
+    elif card_type == "Manipulation":
         base_color = Cs.dark(Cs.blue)
 
     return base_color, Cs.light(base_color)
 
 
 class HandCardWidget(rectObj):
-    WIDTH = 210
-    HEIGHT = 300
+    WIDTH = 280
+    HEIGHT = 390
 
     def __init__(
         self, card: CardData, scene: "DiceCardScene" | None
@@ -126,7 +126,7 @@ class HandCardWidget(rectObj):
         self.title = textObj(card.name, size=26, color=Cs.white)
         self.title.setParent(self, depth=2)
         self.title.centerx = self.offsetRect.centerx
-        self.title.y = 15
+        self.title.y = 30
 
         try:
             self.illustration = imageObj("card_{}.png".format(card.effect))
@@ -139,7 +139,7 @@ class HandCardWidget(rectObj):
         self.illustration.scale = illus_scale *1.2
         self.illustration.setParent(self, depth=0)
         self.illustration.centerx = self.offsetRect.centerx
-        self.illustration.y = self.title.rect.bottom + 17
+        self.illustration.y = self.title.rect.bottom + 25
 
         self.desc = longTextObj(
             card.description,
@@ -240,16 +240,16 @@ class DiceCardScene(Scene):
         screen_rect = Rs.screenRect()
         self.background = imageObj("background.png", screen_rect)
 
-        self.title = textObj("주사위 카드 로그라이크", pos=(40, 40), size=48, color=Cs.white)
+        self.title = textObj("Dice Card Roguelike", pos=(40, 40), size=48, color=Cs.white)
         self.subtitle = textObj(
-            "5개의 주사위를 굴리고 카드를 드래그하여 적을 제압하세요!",
+            "Roll five dice and drag cards to defeat your enemy!",
             pos=(40, 100),
             size=24,
             color=Cs.lightgrey,
         )
 
-        self.turn_label = textObj("턴 1", pos=(40, 150), size=26, color=Cs.yellow)
-        self.player_label = textObj("플레이어", pos=(40, 190), size=26, color=Cs.white)
+        self.turn_label = textObj("Turn 1", pos=(40, 150), size=26, color=Cs.yellow)
+        self.player_label = textObj("Player", pos=(40, 190), size=26, color=Cs.white)
 
         player_bar_rect = pygame.Rect(40, 226, 360, 30)
         self.player_hp_bar_bg = rectObj(
@@ -274,7 +274,7 @@ class DiceCardScene(Scene):
         )
         self.player_hp_value.center = self.player_hp_bar_bg.center
         self.player_block_label = textObj(
-            "방어 0",
+            "Block 0",
             pos=(40, player_bar_rect.bottom + 12),
             size=22,
             color=Cs.skyblue,
@@ -290,7 +290,7 @@ class DiceCardScene(Scene):
         enemy_content_x = enemy_panel_rect.x + 24
         enemy_content_y = enemy_panel_rect.y + 22
         self.enemy_label = textObj(
-            "적",
+            "Enemy",
             pos=(enemy_content_x, enemy_content_y),
             size=26,
             color=Cs.white,
@@ -323,19 +323,19 @@ class DiceCardScene(Scene):
         )
         self.enemy_hp_value.center = self.enemy_hp_bar_bg.center
         self.enemy_block_label = textObj(
-            "방어 0",
+            "Block 0",
             pos=(enemy_content_x, enemy_bar_rect.bottom + 12),
             size=22,
             color=Cs.skyblue,
         )
         self.enemy_intent_label = textObj(
-            "적 의도",
+            "Enemy Intent",
             pos=(enemy_content_x, enemy_bar_rect.bottom + 48),
             size=24,
             color=Cs.tiffanyBlue,
         )
-        self.deck_label = textObj("덱", pos=(40, 306), size=22, color=Cs.lightgrey)
-        self.gold_label = textObj("골드 10", pos=(40, 340), size=22, color=Cs.yellow)
+        self.deck_label = textObj("Deck", pos=(40, 306), size=22, color=Cs.lightgrey)
+        self.gold_label = textObj("Gold 10", pos=(40, 340), size=22, color=Cs.yellow)
 
         dice_start_x = 420
         dice_y = 180
@@ -367,7 +367,7 @@ class DiceCardScene(Scene):
             radius=26,
         )
         self.play_zone_label = textObj(
-            "카드를 여기로 드래그",
+            "Drag cards here",
             size=24,
             color=Cs.white,
         )
@@ -375,7 +375,7 @@ class DiceCardScene(Scene):
         self.play_zone_label.center = self.play_zone.offsetRect.center
 
         self.log_box = longTextObj(
-            "카드를 위로 드래그하면 사용됩니다.",
+            "Drag a card upward to play it.",
             pos=RPoint(40, 370),
             size=20,
             color=Cs.white,
@@ -384,7 +384,7 @@ class DiceCardScene(Scene):
         self.instruction_text = textObj("", pos=(40, 600), size=24, color=Cs.orange)
 
         self.end_turn_button = textButton(
-            "턴 종료",
+            "End Turn",
             pygame.Rect(980, 80, 180, 60),
             size=28,
             radius=18,
@@ -394,7 +394,7 @@ class DiceCardScene(Scene):
         self.end_turn_button.connect(self.end_turn)
 
         self.confirm_selection_button = textButton(
-            "선택 완료",
+            "Confirm Selection",
             pygame.Rect(980, 160, 180, 60),
             size=26,
             radius=18,
@@ -404,7 +404,7 @@ class DiceCardScene(Scene):
         self.confirm_selection_button.connect(self.confirm_pending_selection)
 
         self.reset_button = textButton(
-            "새 전투",
+            "New Battle",
             pygame.Rect(1180, 80, 180, 60),
             size=28,
             radius=18,
@@ -449,14 +449,14 @@ class DiceCardScene(Scene):
         self.discard_pile.clear()
         for die in self.dice:
             die["frozen"] = 0
-        self.log_box.text = "카드를 위로 드래그하면 사용됩니다."
+        self.log_box.text = "Drag a card upward to play it."
         self.instruction_text.text = ""
         self.roll_dice(initial=True)
         self.draw_cards(self.HAND_LIMIT)
         self.roll_enemy_intent()
         self.update_interface()
         if not initial:
-            self.add_log("새로운 전투를 시작합니다!")
+            self.add_log("A new battle begins!")
         self.set_confirm_button_enabled(False)
 
     def roll_dice(self, *, initial: bool = False) -> None:
@@ -488,7 +488,7 @@ class DiceCardScene(Scene):
         random.shuffle(self.discard_pile)
         self.draw_pile.extend(self.discard_pile)
         self.discard_pile.clear()
-        self.add_log("버림패를 섞어 새 덱을 구성했습니다.")
+        self.add_log("Shuffled the discard pile back into the deck.")
 
     def position_hand_widgets(self) -> None:
         count = len(self.hand_widgets)
@@ -522,8 +522,8 @@ class DiceCardScene(Scene):
                 button.color = Cs.dark(Cs.purple)
 
     def update_interface(self) -> None:
-        self.turn_label.text = f"턴 {self.turn_count}"
-        self.player_label.text = "플레이어"
+        self.turn_label.text = f"Turn {self.turn_count}"
+        self.player_label.text = "Player"
         self._update_health_bar(
             self.player_hp,
             self.PLAYER_MAX_HP,
@@ -534,9 +534,9 @@ class DiceCardScene(Scene):
         )
         self.player_hp_value.text = f"{self.player_hp}/{self.PLAYER_MAX_HP}"
         self.player_hp_value.center = self.player_hp_bar_bg.center
-        self.player_block_label.text = f"방어 {self.player_block}"
+        self.player_block_label.text = f"Block {self.player_block}"
 
-        self.enemy_label.text = "적"
+        self.enemy_label.text = "Enemy"
         self._update_health_bar(
             self.enemy_hp,
             self.ENEMY_MAX_HP,
@@ -547,12 +547,12 @@ class DiceCardScene(Scene):
         )
         self.enemy_hp_value.text = f"{self.enemy_hp}/{self.ENEMY_MAX_HP}"
         self.enemy_hp_value.center = self.enemy_hp_bar_bg.center
-        self.enemy_block_label.text = f"방어 {self.enemy_block}"
+        self.enemy_block_label.text = f"Block {self.enemy_block}"
         intent_type, intent_value = self.enemy_intent
-        intent_name = "공격" if intent_type == "attack" else "방어"
-        self.enemy_intent_label.text = f"적 의도: {intent_name} {intent_value}"
+        intent_name = "Attack" if intent_type == "attack" else "Block"
+        self.enemy_intent_label.text = f"Enemy Intent: {intent_name} {intent_value}"
         self.update_deck_label()
-        self.gold_label.text = f"골드 {self.game_state.gold}"
+        self.gold_label.text = f"Gold {self.game_state.gold}"
 
     def _update_health_bar(
         self,
@@ -582,7 +582,7 @@ class DiceCardScene(Scene):
 
     def update_deck_label(self) -> None:
         self.deck_label.text = (
-            f"남은 덱 {len(self.draw_pile)}장 · 버림패 {len(self.discard_pile)}장"
+            f"Draw pile: {len(self.draw_pile)} · Discard pile: {len(self.discard_pile)}"
         )
 
     def add_log(self, message: str) -> None:
@@ -640,33 +640,33 @@ class DiceCardScene(Scene):
         if card.targets > 0:
             self.pending_card = PendingCard(card, card.targets, card.allow_multi_select)
             self.instruction_text.text = self.instruction_for_card(card)
-            self.add_log(f"{card.name}을(를) 사용합니다. {self.instruction_text.text}")
+            self.add_log(f"Playing {card.name}. {self.instruction_text.text}")
         else:
             self.resolve_card_effect(card, [])
             self.discard_pile.append(card)
-            self.instruction_text.text = f"{card.name} 사용!"
+            self.instruction_text.text = f"{card.name} played!"
             self.finalize_card_resolution()
         self.update_interface()
         self.update_confirm_button_state()
 
     def instruction_for_card(self, card: CardData) -> str:
         if card.effect == "clone":
-            return "왼쪽과 오른쪽 주사위를 순서대로 선택하세요."
+            return "Select the left die, then the right die."
         if card.effect == "mirror":
             if card.allow_multi_select:
-                return "반전할 주사위를 선택하세요. 선택 완료 버튼으로 확정합니다."
-            return "반전할 주사위를 선택하세요."
+                return "Choose dice to invert, then confirm to apply."
+            return "Choose a die to invert."
         if card.effect == "stasis":
             if card.allow_multi_select:
-                return "고정할 주사위를 선택하세요. 선택 완료 버튼을 누르면 적용됩니다."
-            return "고정할 주사위를 선택하세요."
+                return "Select dice to freeze and confirm to apply."
+            return "Select a die to freeze."
         if card.effect == "tinker":
             if card.allow_multi_select:
-                return "강화할 주사위를 선택하세요. 선택 완료 버튼으로 마무리합니다."
-            return "강화할 주사위를 선택하세요."
+                return "Select dice to tune up, then confirm to finish."
+            return "Select a die to tune up."
         if card.effect == "reroll":
-            return "다시 굴릴 주사위를 원하는 만큼 선택한 뒤 선택 완료를 누르세요."
-        return "주사위를 선택하세요."
+            return "Choose dice to reroll, then confirm when ready."
+        return "Select dice."
 
     def finalize_card_resolution(self) -> None:
         self.pending_card = None
@@ -682,7 +682,7 @@ class DiceCardScene(Scene):
             return
         if self.pending_card is None:
             die = self.dice[index]
-            self.add_log(f"{index + 1}번 주사위: {die['value']}")
+            self.add_log(f"Die {index + 1}: {die['value']}")
             return
 
         pending = self.pending_card
@@ -691,17 +691,18 @@ class DiceCardScene(Scene):
             pending.add_target(index)
             self.update_dice_display()
             if pending.has_minimum_selection():
-                self.instruction_text.text = "선택 완료 버튼을 눌러 카드 효과를 발동하세요."
+                self.instruction_text.text = "Press Confirm to trigger the card."
             else:
                 remaining = max(0, pending.required - len(pending.selected))
                 if remaining > 0:
-                    self.instruction_text.text = f"주사위를 {remaining}개 더 선택하세요."
+                    noun = "die" if remaining == 1 else "dice"
+                    self.instruction_text.text = f"Select {remaining} more {noun}."
                 else:
-                    self.instruction_text.text = "적용할 주사위를 선택하세요."
+                    self.instruction_text.text = "Select dice to apply the effect."
             if already_selected and index not in pending.selected:
-                self.add_log(f"{index + 1}번 주사위 선택을 해제했습니다.")
+                self.add_log(f"Deselected die {index + 1}.")
             elif index in pending.selected:
-                self.add_log(f"{index + 1}번 주사위를 선택했습니다.")
+                self.add_log(f"Selected die {index + 1}.")
             self.update_confirm_button_state()
         else:
             pending.add_target(index)
@@ -709,11 +710,12 @@ class DiceCardScene(Scene):
             if pending.is_complete():
                 self.resolve_card_effect(pending.card, pending.selected)
                 self.discard_pile.append(pending.card)
-                self.instruction_text.text = f"{pending.card.name} 사용 완료!"
+                self.instruction_text.text = f"{pending.card.name} resolved!"
                 self.finalize_card_resolution()
             else:
                 remaining = pending.required - len(pending.selected)
-                self.instruction_text.text = f"주사위를 {remaining}개 더 선택하세요."
+                noun = "die" if remaining == 1 else "dice"
+                self.instruction_text.text = f"Select {remaining} more {noun}."
 
     def confirm_pending_selection(self) -> None:
         if self.game_over:
@@ -722,11 +724,11 @@ class DiceCardScene(Scene):
             return
         pending = self.pending_card
         if not pending.has_minimum_selection():
-            self.instruction_text.text = "적용할 주사위를 선택하세요."
+            self.instruction_text.text = "Select dice to apply the effect."
             return
         self.resolve_card_effect(pending.card, pending.selected)
         self.discard_pile.append(pending.card)
-        self.instruction_text.text = f"{pending.card.name} 사용 완료!"
+        self.instruction_text.text = f"{pending.card.name} resolved!"
         self.finalize_card_resolution()
 
     def resolve_card_effect(self, card: CardData, selection: list[int]) -> None:
@@ -735,33 +737,33 @@ class DiceCardScene(Scene):
             value = self.dice[left]["value"]
             self.dice[right]["value"] = value
             self.add_log(
-                f"눈 복제! {left + 1}번 주사위의 눈({value})을 {right + 1}번에 복제했습니다."
+                f"Pip Clone! Copied die {left + 1} value ({value}) to die {right + 1}."
             )
         elif card.effect == "mirror" and selection:
             for idx in selection:
                 old = self.dice[idx]["value"]
                 self.dice[idx]["value"] = 7 - old
                 self.add_log(
-                    f"미러 주사위! {idx + 1}번 주사위가 {old} → {self.dice[idx]['value']}로 반전되었습니다."
+                    f"Mirror Dice! Die {idx + 1} flipped from {old} to {self.dice[idx]['value']}."
                 )
         elif card.effect == "stasis" and selection:
             for idx in selection:
                 self.dice[idx]["frozen"] = max(self.dice[idx]["frozen"], 1)
-                self.add_log(f"Stasis! {idx + 1}번 주사위를 다음 턴까지 고정합니다.")
+                self.add_log(f"Stasis! Locked die {idx + 1} until next turn.")
         elif card.effect == "tinker" and selection:
             for idx in selection:
                 old = self.dice[idx]["value"]
                 if old < 6:
                     self.dice[idx]["value"] = old + 1
                 self.add_log(
-                    f"Tinker! {idx + 1}번 주사위가 {old} → {self.dice[idx]['value']}가 되었습니다."
+                    f"Tinker! Die {idx + 1} changed from {old} to {self.dice[idx]['value']}."
                 )
         elif card.effect == "reroll" and selection:
             for idx in selection:
                 old = self.dice[idx]["value"]
                 self.dice[idx]["value"] = random.randint(1, 6)
                 self.add_log(
-                    f"Reroll! {idx + 1}번 주사위를 {old}에서 {self.dice[idx]['value']}로 다시 굴렸습니다."
+                    f"Reroll! Die {idx + 1} rerolled from {old} to {self.dice[idx]['value']}."
                 )
         elif card.effect == "odd_attack":
             damage = sum(die["value"] for die in self.dice if die["value"] % 2 == 1)
@@ -769,7 +771,7 @@ class DiceCardScene(Scene):
         elif card.effect == "even_shield":
             block = sum(die["value"] for die in self.dice if die["value"] % 2 == 0)
             self.player_block += block
-            self.add_log(f"Even Shield! {block}의 방어를 얻었습니다.")
+            self.add_log(f"Even Shield! Gained {block} block.")
         elif card.effect == "strafe":
             values = [die["value"] for die in self.dice]
             value_set = set(values)
@@ -778,48 +780,48 @@ class DiceCardScene(Scene):
             damage = 0
             if any(straight.issubset(value_set) for straight in big_straights):
                 damage = 60
-                self.add_log("스트레이프! Big Straight으로 60 피해를 줍니다.")
+                self.add_log("Strafe! Big Straight deals 60 damage.")
             elif any(straight.issubset(value_set) for straight in small_straights):
                 damage = 30
-                self.add_log("스트레이프! Small Straight으로 30 피해를 줍니다.")
+                self.add_log("Strafe! Small Straight deals 30 damage.")
             else:
-                self.add_log("스트레이프! 스트레이트가 없어 공격에 실패했습니다.")
-            self.deal_damage(damage, source="스트레이프")
+                self.add_log("Strafe! No straight—attack failed.")
+            self.deal_damage(damage, source="Strafe")
         elif card.effect == "strike":
             damage = sum(die["value"] for die in self.dice)
-            self.add_log(f"스트라이크! 주사위 합 {damage}으로 공격합니다.")
-            self.deal_damage(damage, source="스트라이크")
+            self.add_log(f"Strike! Attacking with total dice value {damage}.")
+            self.deal_damage(damage, source="Strike")
         elif card.effect == "fortify":
             block = sum(die["value"] for die in self.dice)
             self.player_block += block
-            self.add_log(f"Fortify! 주사위 합 {block}의 방어를 얻었습니다.")
+            self.add_log(f"Fortify! Gained {block} block from the total dice.")
         elif card.effect == "pair_shot":
             counts = Counter(die["value"] for die in self.dice)
             if any(count >= 2 for count in counts.values()):
                 damage = 15
-                self.add_log("Pair Shot! 페어를 맞춰 15 피해를 줍니다.")
+                self.add_log("Pair Shot! Pair hit for 15 damage.")
                 self.deal_damage(damage, source="Pair Shot")
             else:
-                self.add_log("Pair Shot! 페어가 없어 공격에 실패했습니다.")
+                self.add_log("Pair Shot! No pair—attack failed.")
         elif card.effect == "one_shot":
             ones = sum(1 for die in self.dice if die["value"] == 1)
             damage = ones * 15
-            self.add_log(f"One Shot! 주사위 {ones}개로 {damage} 피해를 가합니다.")
+            self.add_log(f"One Shot! {ones} dice deal {damage} damage.")
             self.deal_damage(damage, source="One Shot")
         elif card.effect == "double_guard":
             twos = sum(1 for die in self.dice if die["value"] == 2)
             block = twos * 10
             if block > 0:
                 self.player_block += block
-                self.add_log(f"Double Guard! {twos}개의 주사위로 {block} 방어를 얻었습니다.")
+                self.add_log(f"Double Guard! {twos} dice grant {block} block.")
             else:
-                self.add_log("Double Guard! 방어를 얻을 수 있는 주사위가 부족합니다.")
+                self.add_log("Double Guard! Not enough dice showing 2.")
         else:
-            self.add_log("카드 효과가 제대로 적용되지 않았습니다.")
+            self.add_log("The card effect failed to resolve.")
 
     def deal_damage(self, amount: int, *, source: str) -> None:
         if amount <= 0:
-            self.add_log(f"{source}! 공격이 통하지 않았습니다.")
+            self.add_log(f"{source}! The attack had no effect.")
             return
         blocked = min(amount, self.enemy_block)
         if blocked:
@@ -827,7 +829,7 @@ class DiceCardScene(Scene):
         damage = amount - blocked
         self.enemy_hp -= damage
         self.add_log(
-            f"{source}! {blocked} 방어를 제거하고 {damage} 피해를 입혔습니다."
+            f"{source}! Removed {blocked} block and dealt {damage} damage."
         )
 
     def on_victory(self) -> None:
@@ -837,9 +839,9 @@ class DiceCardScene(Scene):
         reward = random.randint(5, 8)
         self.game_state.gold += reward
         self.add_log(
-            f"적을 쓰러뜨렸습니다! {reward} 골드를 획득했습니다."
+            f"Defeated the enemy! Gained {reward} gold."
         )
-        self.instruction_text.text = "승리했습니다! 상점으로 이동합니다."
+        self.instruction_text.text = "Victory! Heading to the shop."
         self.update_interface()
         Scenes.shopScene.queue_reward(reward)
         Rs.setCurrentScene(Scenes.shopScene)
@@ -848,15 +850,15 @@ class DiceCardScene(Scene):
         if self.game_over:
             return
         self.game_over = True
-        self.add_log("패배했습니다. 새 전투를 눌러 다시 시작하세요.")
-        self.instruction_text.text = "패배..."
+        self.add_log("Defeated. Press New Battle to try again.")
+        self.instruction_text.text = "Defeat..."
 
     # -- Turn flow -----------------------------------------------------
     def end_turn(self) -> None:
         if self.game_over:
             return
         if self.pending_card is not None:
-            self.add_log("카드 효과 선택을 마친 뒤 턴을 종료하세요.")
+            self.add_log("Finish resolving the card before ending the turn.")
             return
 
         if self.hand:
@@ -873,10 +875,10 @@ class DiceCardScene(Scene):
             if damage > 0:
                 self.player_hp -= damage
             self.add_log(
-                f"적이 {intent_value} 공격! 방어 {blocked}, 피해 {damage}.")
+                f"Enemy attacks for {intent_value}! Blocked {blocked}, took {damage} damage.")
         else:
             self.enemy_block += intent_value
-            self.add_log(f"적이 {intent_value}의 방어를 올렸습니다.")
+            self.add_log(f"Enemy gained {intent_value} block.")
 
         self.player_block = 0
         if self.player_hp <= 0:
@@ -889,7 +891,7 @@ class DiceCardScene(Scene):
         self.draw_cards(self.HAND_LIMIT)
         self.roll_enemy_intent()
         self.update_interface()
-        self.instruction_text.text = "새 턴이 시작되었습니다."
+        self.instruction_text.text = "A new turn begins."
 
     # -- Scene lifecycle -----------------------------------------------
     def update(self) -> None:
@@ -970,10 +972,10 @@ class ShopCardItem:
         self.buy_button.connect(self.on_buy)
 
     def _button_text(self) -> str:
-        return f"구매 ({self.price}골드)"
+        return f"Buy ({self.price} gold)"
 
     def set_position(self, x: float, y: float) -> None:
-        self.card_widget.set_home(RPoint(x, y))
+        self.card_widget.pos = RPoint(x, y)
 
     def on_buy(self) -> None:
         self.scene.attempt_purchase(self)
@@ -981,7 +983,7 @@ class ShopCardItem:
     def mark_sold(self) -> None:
         self.sold = True
         self.buy_button.enabled = False
-        self.buy_button.text = "구매 완료"
+        self.buy_button.text = "Purchased"
         self.buy_button.color = Cs.dark(Cs.grey)
         self.card_widget.color_overlay.color = Cs.dark(Cs.grey)
         self.card_widget.color_overlay.alpha = 140
@@ -1008,14 +1010,14 @@ class ShopScene(Scene):
     def initOnce(self) -> None:
         screen_rect = Rs.screenRect()
         self.background = imageObj("background.png", screen_rect)
-        self.title = textObj("상점", pos=(60, 60), size=52, color=Cs.white)
+        self.title = textObj("Shop", pos=(60, 60), size=52, color=Cs.white)
         self.subtitle = textObj(
-            "승리 보상으로 새로운 카드를 구매하세요!",
+            "Spend your reward to buy new cards!",
             pos=(60, 120),
             size=26,
             color=Cs.lightgrey,
         )
-        self.gold_label = textObj("골드 10", pos=(60, 170), size=28, color=Cs.yellow)
+        self.gold_label = textObj("Gold 10", pos=(60, 170), size=28, color=Cs.yellow)
         self.message = longTextObj(
             "",
             pos=RPoint(60, 210),
@@ -1025,7 +1027,7 @@ class ShopScene(Scene):
         )
 
         self.continue_button = textButton(
-            "다음 전투 시작",
+            "Start Next Battle",
             pygame.Rect(60, 760, 240, 70),
             size=26,
             radius=20,
@@ -1046,12 +1048,14 @@ class ShopScene(Scene):
     def _open_shop(self) -> None:
         reward = self.pending_reward if self.pending_reward is not None else 0
         self.pending_reward = None
-        self.message.text = f"전투에서 {reward} 골드를 획득했습니다. 원하는 카드를 구매하세요."
+        self.message.text = (
+            f"You earned {reward} gold from battle. Pick any card you like."
+        )
         self.generate_cards()
         self.update_gold_label()
 
     def update_gold_label(self) -> None:
-        self.gold_label.text = f"골드 {self.game_state.gold}"
+        self.gold_label.text = f"Gold {self.game_state.gold}"
 
     def generate_cards(self) -> None:
         self.cards_for_sale.clear()
@@ -1073,13 +1077,13 @@ class ShopScene(Scene):
         if view.sold:
             return
         if self.game_state.gold < view.price:
-            self.message.text = "골드가 부족합니다."
+            self.message.text = "Not enough gold."
             return
         self.game_state.gold -= view.price
         self.game_state.add_card(view.card_key)
         view.mark_sold()
         self.update_gold_label()
-        self.message.text = f"{view.card.name} 카드를 덱에 추가했습니다."
+        self.message.text = f"Added {view.card.name} to your deck."
 
     def start_next_combat(self) -> None:
         Scenes.mainScene.reset_combat()

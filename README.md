@@ -1,7 +1,7 @@
-설명용 블로그 (Blog for description)
+Reference blog for additional details:
 
 https://danosato.tistory.com/1
 
-* 주의사항
+* Notes
 
-프로젝트가 커지면 __main__ 함수를 별도로 분리하는 것이 좋습니다.
+- When the project grows, consider moving the `__main__` function into a dedicated module.
