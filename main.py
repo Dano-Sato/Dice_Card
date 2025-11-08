@@ -961,8 +961,8 @@ class ShopCardItem:
         )
         self.buy_button.setParent(self.card_widget, depth=3)
         self.buy_button.centerx = self.card_widget.offsetRect.centerx
-        self.buy_button.midbottom = (
-            self.card_widget.offsetRect.midbottom - RPoint(0, 18)
+        self.buy_button.midtop = (
+            self.card_widget.offsetRect.midbottom + RPoint(0, 18)
         )
         self.buy_button.connect(self.on_buy)
 
