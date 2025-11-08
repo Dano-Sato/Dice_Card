@@ -90,7 +90,9 @@ class HandCardWidget(rectObj):
     WIDTH = 210
     HEIGHT = 300
 
-    def __init__(self, card: CardData, scene: "DiceCardScene") -> None:
+    def __init__(
+        self, card: CardData, scene: "DiceCardScene" | None
+    ) -> None:
         super().__init__(
             pygame.Rect(0, 0, self.WIDTH, self.HEIGHT),
             color=Cs.dark(Cs.steelblue),
@@ -159,6 +161,14 @@ class HandCardWidget(rectObj):
 
     def handle_events(self) -> None:
         is_hovered = self.collideMouse()
+        if self.scene is None:
+            if is_hovered:
+                self.color_overlay.color = self.hover_color
+                self.color_overlay.alpha = 80
+            else:
+                self.color_overlay.color = self.base_color
+                self.color_overlay.alpha = 60
+            return
         if self.dragging or is_hovered:
             self.color_overlay.color = self.hover_color
             self.color_overlay.alpha = 80
@@ -923,74 +933,24 @@ class DiceCardScene(Scene):
             widget.draw()
 
 
-class ShopCardView:
-    WIDTH = 240
-    HEIGHT = 320
-
-    def __init__(self, card_key: str, card: CardData, price: int, scene: "ShopScene") -> None:
+class ShopCardItem:
+    def __init__(
+        self,
+        card_key: str,
+        card: CardData,
+        price: int,
+        scene: "ShopScene",
+    ) -> None:
         self.card_key = card_key
         self.card = card
         self.price = price
         self.scene = scene
         self.sold = False
 
-        self.container = rectObj(
-            pygame.Rect(0, 0, self.WIDTH, self.HEIGHT),
-            color=Cs.dark(Cs.grey),
-            edge=4,
-            radius=20,
-        )
-        self.container.alpha = 0
-        self.base_color, self.hover_color = card_color_palette(card.card_type)
+        self.card_widget = HandCardWidget(card, scene=None)
+        self.card_widget.color_overlay.alpha = 50
 
-        self.background_image = imageObj("card_base.png")
-        base_scale = self.HEIGHT / self.background_image.rect.height
-        self.background_image.scale = base_scale
-        self.background_image.setParent(self.container, depth=-1)
-        self.background_image.center = self.container.offsetRect.center
-
-        overlay_rect = pygame.Rect(0, 0, self.WIDTH, self.HEIGHT)
-        self.color_overlay = rectObj(
-            overlay_rect,
-            color=self.base_color,
-            radius=20,
-        )
-        self.color_overlay.alpha = 30
-        self.color_overlay.setParent(self.container, depth=0)
-        self.color_overlay.center = self.container.offsetRect.center
-
-        self.title = textObj(card.name, size=28, color=Cs.white)
-        self.title.setParent(self.container, depth=1)
-        self.title.centerx = self.container.offsetRect.centerx
-        self.title.y = 28
-
-        self.type_text = textObj(card.card_type, size=20, color=Cs.lightgrey)
-        self.type_text.setParent(self.container, depth=1)
-        self.type_text.centerx = self.container.offsetRect.centerx
-        self.type_text.y = self.title.rect.bottom + 8
-
-        self.illustration = imageObj("sample.png")
-        illus_scale = min(
-            (self.WIDTH - 48) / self.illustration.rect.width,
-            (self.HEIGHT * 0.42) / self.illustration.rect.height,
-        )
-        self.illustration.scale = illus_scale
-        self.illustration.setParent(self.container, depth=1)
-        self.illustration.centerx = self.container.offsetRect.centerx
-        self.illustration.y = self.type_text.rect.bottom + 18
-
-        self.desc = longTextObj(
-            card.description,
-            pos=RPoint(0, 0),
-            size=20,
-            color=Cs.white,
-            textWidth=self.WIDTH - 48,
-        )
-        self.desc.setParent(self.container, depth=1)
-        self.desc.centerx = self.container.offsetRect.centerx
-        self.desc.y = self.illustration.rect.bottom + 18
-
-        button_rect = pygame.Rect(0, 0, self.WIDTH - 40, 54)
+        button_rect = pygame.Rect(0, 0, self.card_widget.WIDTH - 40, 54)
         self.buy_button = textButton(
             self._button_text(),
             button_rect,
@@ -999,12 +959,18 @@ class ShopCardView:
             color=Cs.orange,
             textColor=Cs.black,
         )
+        self.buy_button.setParent(self.card_widget, depth=3)
+        self.buy_button.centerx = self.card_widget.offsetRect.centerx
+        self.buy_button.midbottom = (
+            self.card_widget.offsetRect.midbottom - RPoint(0, 18)
+        )
         self.buy_button.connect(self.on_buy)
-        self.buy_button.setParent(self.container, depth=1)
-        self.buy_button.centerx = self.container.offsetRect.centerx
-        self.buy_button.midbottom = self.container.offsetRect.midbottom - RPoint(0, 18)
+
+    def _button_text(self) -> str:
+        return f"구매 ({self.price}골드)"
+
     def set_position(self, x: float, y: float) -> None:
-        self.container.pos = RPoint(x, y)
+        self.card_widget.set_home(RPoint(x, y))
 
     def on_buy(self) -> None:
         self.scene.attempt_purchase(self)
@@ -1014,21 +980,16 @@ class ShopCardView:
         self.buy_button.enabled = False
         self.buy_button.text = "구매 완료"
         self.buy_button.color = Cs.dark(Cs.grey)
-        self.color_overlay.color = Cs.dark(Cs.grey)
-        self.color_overlay.alpha = 140
-
-    def _button_text(self) -> str:
-        return f"구매 ({self.price}골드)"
+        self.card_widget.color_overlay.color = Cs.dark(Cs.grey)
+        self.card_widget.color_overlay.alpha = 140
 
     def update(self) -> None:
+        if not self.sold:
+            self.card_widget.handle_events()
         self.buy_button.update()
 
     def draw(self) -> None:
-        self.container.draw()
-        self.title.draw()
-        self.type_text.draw()
-        self.illustration.draw()
-        self.desc.draw()
+        self.card_widget.draw()
         self.buy_button.draw()
 
 
@@ -1038,7 +999,7 @@ class ShopScene(Scene):
     def __init__(self, game_state: GameState) -> None:
         super().__init__()
         self.game_state = game_state
-        self.cards_for_sale: list[ShopCardView] = []
+        self.cards_for_sale: list[ShopCardItem] = []
         self.pending_reward: int | None = None
 
     def initOnce(self) -> None:
@@ -1101,11 +1062,11 @@ class ShopScene(Scene):
         y = 260
         for index, key in enumerate(selected_keys):
             card = CARD_LIBRARY[key].clone()
-            view = ShopCardView(key, card, self.CARD_PRICE, self)
+            view = ShopCardItem(key, card, self.CARD_PRICE, self)
             view.set_position(start_x + index * spacing, y)
             self.cards_for_sale.append(view)
 
-    def attempt_purchase(self, view: ShopCardView) -> None:
+    def attempt_purchase(self, view: ShopCardItem) -> None:
         if view.sold:
             return
         if self.game_state.gold < view.price:
