@@ -138,9 +138,23 @@ INITIAL_DECK_BLUEPRINT: list[str] = (
 )
 
 
+def card_color_palette(card_type: str) -> tuple[tuple[int, int, int], tuple[int, int, int]]:
+    base_color = Cs.dark(Cs.steelblue)
+    if card_type == "공격":
+        base_color = Cs.dark(Cs.red)
+    elif card_type == "방어":
+        base_color = Cs.dark(Cs.red)
+    elif card_type == "강화":
+        base_color = Cs.dark(Cs.purple)
+    elif card_type == "조작":
+        base_color = Cs.dark(Cs.blue)
+
+    return base_color, Cs.light(base_color)
+
+
 class HandCardWidget(rectObj):
-    WIDTH = 160
-    HEIGHT = 220
+    WIDTH = 210
+    HEIGHT = 300
 
     def __init__(self, card: CardData, scene: "DiceCardScene") -> None:
         super().__init__(
@@ -154,43 +168,52 @@ class HandCardWidget(rectObj):
         self.home_pos = RPoint(0, 0)
         self.dragging = False
 
-        self.base_color = Cs.dark(Cs.steelblue)
-        self.hover_color = Cs.light(self.base_color)
-        if card.card_type == "공격":
-            self.base_color = Cs.dark(Cs.red)
-            self.hover_color = Cs.light(self.base_color)
-        elif card.card_type == "방어":
-            self.base_color = Cs.dark(Cs.teal)
-            self.hover_color = Cs.light(self.base_color)
-        elif card.card_type == "강화":
-            self.base_color = Cs.dark(Cs.purple)
-            self.hover_color = Cs.light(self.base_color)
-        elif card.card_type == "조작":
-            self.base_color = Cs.dark(Cs.blue)
-            self.hover_color = Cs.light(self.base_color)
+        self.base_color, self.hover_color = card_color_palette(card.card_type)
 
-        self.color = self.base_color
+        self.background_image = imageObj("card_base.png")
+        base_scale = self.HEIGHT / self.background_image.rect.height
+        self.background_image.scale = base_scale
+        self.background_image.setParent(self, depth=0)
+        self.background_image.center = self.offsetRect.center
+
+        overlay_rect = pygame.Rect(0, 0, self.WIDTH, self.HEIGHT)
+        self.color_overlay = rectObj(
+            overlay_rect,
+            color=self.base_color,
+            radius=18,
+        )
+        self.color_overlay.alpha = 110
+        self.color_overlay.setParent(self, depth=1)
+        self.color_overlay.center = self.offsetRect.center
 
         self.title = textObj(card.name, size=26, color=Cs.white)
-        self.title.setParent(self, depth=1)
+        self.title.setParent(self, depth=2)
         self.title.centerx = self.offsetRect.centerx
-        self.title.y = 18
+        self.title.y = 15
 
-        self.type_text = textObj(card.card_type, size=18, color=Cs.lightgrey)
-        self.type_text.setParent(self, depth=1)
-        self.type_text.centerx = self.offsetRect.centerx
-        self.type_text.y = self.title.rect.bottom + 4
+        try:
+            self.illustration = imageObj("card_{}.png".format(card.effect))
+        except:
+            self.illustration = imageObj("sample.png")
+        illus_scale = min(
+            (self.WIDTH - 36) / self.illustration.rect.width,
+            (self.HEIGHT * 0.42) / self.illustration.rect.height,
+        )
+        self.illustration.scale = illus_scale *1.2
+        self.illustration.setParent(self, depth=0)
+        self.illustration.centerx = self.offsetRect.centerx
+        self.illustration.y = self.title.rect.bottom + 12
 
         self.desc = longTextObj(
             card.description,
             pos=RPoint(0, 0),
-            size=18,
+            size=16,
             color=Cs.white,
-            textWidth=self.WIDTH - 30,
+            textWidth=self.WIDTH - 70,
         )
         self.desc.setParent(self, depth=1)
         self.desc.centerx = self.offsetRect.centerx
-        self.desc.y = self.type_text.rect.bottom + 12
+        self.desc.y = self.illustration.rect.bottom + 22
 
     def set_home(self, pos: RPoint) -> None:
         self.home_pos = RPoint(pos.x, pos.y)
@@ -200,7 +223,13 @@ class HandCardWidget(rectObj):
         self.pos = RPoint(self.home_pos.x, self.home_pos.y)
 
     def handle_events(self) -> None:
-        self.color = self.hover_color if self.collideMouse() else self.base_color
+        is_hovered = self.collideMouse()
+        if self.dragging or is_hovered:
+            self.color_overlay.color = self.hover_color
+            self.color_overlay.alpha = 140
+        else:
+            self.color_overlay.color = self.base_color
+            self.color_overlay.alpha = 110
 
         if self.scene.game_over:
             return
@@ -209,7 +238,8 @@ class HandCardWidget(rectObj):
 
         def on_start() -> None:
             self.dragging = True
-            self.color = self.hover_color
+            self.color_overlay.color = self.hover_color
+            self.color_overlay.alpha = 160
 
         def on_drop() -> None:
             self.dragging = False
@@ -975,26 +1005,55 @@ class ShopCardView:
             edge=4,
             radius=20,
         )
+        self.container.alpha = 0
+        self.base_color, self.hover_color = card_color_palette(card.card_type)
+
+        self.background_image = imageObj("card_base.png")
+        base_scale = self.HEIGHT / self.background_image.rect.height
+        self.background_image.scale = base_scale
+        self.background_image.setParent(self.container, depth=-1)
+        self.background_image.center = self.container.offsetRect.center
+
+        overlay_rect = pygame.Rect(0, 0, self.WIDTH, self.HEIGHT)
+        self.color_overlay = rectObj(
+            overlay_rect,
+            color=self.base_color,
+            radius=20,
+        )
+        self.color_overlay.alpha = 30
+        self.color_overlay.setParent(self.container, depth=0)
+        self.color_overlay.center = self.container.offsetRect.center
+
         self.title = textObj(card.name, size=28, color=Cs.white)
         self.title.setParent(self.container, depth=1)
         self.title.centerx = self.container.offsetRect.centerx
-        self.title.y = 18
+        self.title.y = 28
 
         self.type_text = textObj(card.card_type, size=20, color=Cs.lightgrey)
         self.type_text.setParent(self.container, depth=1)
         self.type_text.centerx = self.container.offsetRect.centerx
-        self.type_text.y = self.title.rect.bottom + 6
+        self.type_text.y = self.title.rect.bottom + 8
+
+        self.illustration = imageObj("sample.png")
+        illus_scale = min(
+            (self.WIDTH - 48) / self.illustration.rect.width,
+            (self.HEIGHT * 0.42) / self.illustration.rect.height,
+        )
+        self.illustration.scale = illus_scale
+        self.illustration.setParent(self.container, depth=1)
+        self.illustration.centerx = self.container.offsetRect.centerx
+        self.illustration.y = self.type_text.rect.bottom + 18
 
         self.desc = longTextObj(
             card.description,
             pos=RPoint(0, 0),
             size=20,
             color=Cs.white,
-            textWidth=self.WIDTH - 40,
+            textWidth=self.WIDTH - 48,
         )
         self.desc.setParent(self.container, depth=1)
         self.desc.centerx = self.container.offsetRect.centerx
-        self.desc.y = self.type_text.rect.bottom + 14
+        self.desc.y = self.illustration.rect.bottom + 18
 
         button_rect = pygame.Rect(0, 0, self.WIDTH - 40, 54)
         self.buy_button = textButton(
@@ -1020,6 +1079,8 @@ class ShopCardView:
         self.buy_button.enabled = False
         self.buy_button.text = "구매 완료"
         self.buy_button.color = Cs.dark(Cs.grey)
+        self.color_overlay.color = Cs.dark(Cs.grey)
+        self.color_overlay.alpha = 140
 
     def _button_text(self) -> str:
         return f"구매 ({self.price}골드)"
@@ -1031,6 +1092,7 @@ class ShopCardView:
         self.container.draw()
         self.title.draw()
         self.type_text.draw()
+        self.illustration.draw()
         self.desc.draw()
         self.buy_button.draw()
 
