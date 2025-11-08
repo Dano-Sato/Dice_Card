@@ -1288,8 +1288,6 @@ class UpgradeCardOption:
         self.upgrade_button.enabled = False
         self.upgrade_button.text = "Enhanced!"
         self.upgrade_button.color = Cs.lime
-        self.card_widget.color_overlay.color = Cs.lime
-        self.card_widget.color_overlay.alpha = 140
 
     def mark_unavailable(self) -> None:
         self.upgrade_button.enabled = False
