@@ -228,7 +228,7 @@ class PendingCard:
 
 
 class DiceCardScene(Scene):
-    HAND_LIMIT = 5
+    HAND_LIMIT = 4
     PLAYER_MAX_HP = 40
     ENEMY_MAX_HP = 50
 
@@ -237,6 +237,9 @@ class DiceCardScene(Scene):
         self.game_state = game_state
 
     def initOnce(self) -> None:
+        
+        Rs.playMusic("bgm.mp3")
+
         screen_rect = Rs.screenRect()
         self.background = imageObj("background.png", screen_rect)
 
@@ -337,7 +340,7 @@ class DiceCardScene(Scene):
         self.deck_label = textObj("Deck", pos=(40, 306), size=22, color=Cs.lightgrey)
         self.gold_label = textObj("Gold 10", pos=(40, 340), size=22, color=Cs.yellow)
 
-        dice_start_x = 420
+        dice_start_x = 600
         dice_y = 180
         dice_spacing = 120
         self.dice: list[dict[str, Any]] = []
@@ -366,6 +369,7 @@ class DiceCardScene(Scene):
             edge=4,
             radius=26,
         )
+        self.play_zone.center = Rs.screenRect().center - RPoint(0, 60)
         self.play_zone_label = textObj(
             "Drag cards here",
             size=24,
@@ -927,7 +931,8 @@ class DiceCardScene(Scene):
         self.gold_label.draw()
         for button in self.dice_buttons:
             button.draw()
-        self.play_zone.draw()
+        if Rs.draggedObj != None:
+            self.play_zone.draw()
         self.log_box.draw()
         self.instruction_text.draw()
         if self.should_show_confirm_button():
