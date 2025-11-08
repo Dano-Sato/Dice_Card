@@ -378,6 +378,25 @@ class DiceCardScene(Scene):
                 enableShadow=False,
             )
 
+            overlay_rect = pygame.Rect(0, 0, rect.width, rect.height)
+            frozen_overlay = rectObj(
+                overlay_rect,
+                color=Cs.cyan,
+                radius=4,
+            )
+            frozen_overlay.alpha = 0
+            frozen_overlay.setParent(button, depth=1)
+            frozen_overlay.center = button.offsetRect.center
+
+            selection_overlay = rectObj(
+                overlay_rect,
+                color=Cs.purple,
+                radius=4,
+            )
+            selection_overlay.alpha = 0
+            selection_overlay.setParent(button, depth=2)
+            selection_overlay.center = button.offsetRect.center
+
             def make_handler(index: int) -> Callable[[], None]:
                 return lambda: self.on_die_clicked(index)
 
@@ -388,6 +407,8 @@ class DiceCardScene(Scene):
                 "frozen": 0,
                 "button": button,
                 "rect": rect.copy(),
+                "frozen_overlay": frozen_overlay,
+                "selection_overlay": selection_overlay,
             })
 
         self.play_zone = rectObj(
@@ -547,17 +568,26 @@ class DiceCardScene(Scene):
             button = die["button"]
             image_path = f"die_{die['value']}.png"
             button.setImage(image_path)
+            button.alpha = 255
             target_rect: pygame.Rect | None = die.get("rect")
             if target_rect is not None:
                 button.rect = target_rect
+            frozen_overlay: rectObj | None = die.get("frozen_overlay")
+            selection_overlay: rectObj | None = die.get("selection_overlay")
+            if frozen_overlay is not None:
+                frozen_overlay.rect = pygame.Rect(0, 0, button.rect.width, button.rect.height)
+                frozen_overlay.center = button.offsetRect.center
+                frozen_overlay.alpha = 100 if die["frozen"] > 0 else 0
+            if selection_overlay is not None:
+                selection_overlay.rect = pygame.Rect(0, 0, button.rect.width, button.rect.height)
+                selection_overlay.center = button.offsetRect.center
+                selection_overlay.alpha = (
+                    100 if self.pending_card and idx in self.pending_card.selected else 0
+                )
             if hasattr(button, "hoverObj"):
                 button.hoverObj.setImage(image_path)
                 button.hoverObj.rect = button.offsetRect
                 button.hoverObj.colorize(Cs.white, alpha=60)
-            if die["frozen"] > 0:
-                button.colorize(Cs.cyan, alpha=220)
-            if self.pending_card and idx in self.pending_card.selected:
-                button.colorize(Cs.purple, alpha=220)
 
     def update_interface(self) -> None:
         self.turn_label.text = f"Turn {self.turn_count}"
