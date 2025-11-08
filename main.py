@@ -132,7 +132,10 @@ class HandCardWidget(rectObj):
         try:
             self.illustration = imageObj("card_{}.png".format(card.effect))
         except:
-            self.illustration = imageObj("sample.png")
+            try:
+                self.illustration = imageObj("card_{}.png".format(card.effect.replace("_plus","")))
+            except:
+                self.illustration = imageObj("sample.png")
         illus_scale = min(
             (self.WIDTH - 36) / self.illustration.rect.width,
             (self.HEIGHT * 0.42) / self.illustration.rect.height,
@@ -969,10 +972,18 @@ class DiceCardScene(Scene):
         self.add_log(
             f"Defeated the enemy! Gained {reward} gold."
         )
-        self.instruction_text.text = "Victory! Heading to the shop."
+        next_scene = random.choice(["shop", "upgrade"])
+        if next_scene == "shop":
+            Scenes.shopScene.queue_reward(reward)
+            destination = "shop"
+            target_scene = Scenes.shopScene
+        else:
+            Scenes.upgradeScene.queue_open()
+            destination = "upgrade chamber"
+            target_scene = Scenes.upgradeScene
+        self.instruction_text.text = f"Victory! Heading to the {destination}."
         self.update_interface()
-        Scenes.shopScene.queue_reward(reward)
-        Rs.setCurrentScene(Scenes.shopScene)
+        Rs.setCurrentScene(target_scene)
 
     def on_defeat(self) -> None:
         if self.game_over:
@@ -1233,10 +1244,192 @@ class ShopScene(Scene):
         self.continue_button.draw()
 
 
+class UpgradeCardOption:
+    def __init__(self, base_key: str, scene: "UpgradeScene") -> None:
+        self.base_key = base_key
+        self.upgraded_key = f"{base_key}_plus"
+        self.scene = scene
+
+        upgraded_card = CARD_LIBRARY[self.upgraded_key].clone()
+        self.card_widget = HandCardWidget(upgraded_card, scene=None)
+        self.card_widget.color_overlay.alpha = 50
+
+        button_rect = pygame.Rect(0, 0, self.card_widget.WIDTH - 40, 54)
+        self.upgrade_button = textButton(
+            "Enhance",
+            button_rect,
+            size=24,
+            radius=16,
+            color=Cs.lime,
+            textColor=Cs.black,
+        )
+        self.upgrade_button.setParent(self.card_widget, depth=3)
+        self.upgrade_button.centerx = self.card_widget.offsetRect.centerx
+        self.upgrade_button.midtop = (
+            self.card_widget.offsetRect.midbottom + RPoint(0, 18)
+        )
+        self.upgrade_button.connect(self.on_select)
+
+    def set_position(self, x: float, y: float) -> None:
+        self.card_widget.pos = RPoint(x, y)
+
+    def on_select(self) -> None:
+        self.scene.apply_upgrade(self)
+
+    def mark_selected(self) -> None:
+        self.upgrade_button.enabled = False
+        self.upgrade_button.text = "Enhanced!"
+        self.upgrade_button.color = Cs.lime
+        self.card_widget.color_overlay.color = Cs.lime
+        self.card_widget.color_overlay.alpha = 140
+
+    def mark_unavailable(self) -> None:
+        self.upgrade_button.enabled = False
+        self.upgrade_button.text = "Unavailable"
+        self.upgrade_button.color = Cs.dark(Cs.grey)
+        self.card_widget.color_overlay.color = Cs.dark(Cs.grey)
+        self.card_widget.color_overlay.alpha = 140
+
+    def update(self) -> None:
+        if self.upgrade_button.enabled:
+            self.card_widget.handle_events()
+        self.upgrade_button.update()
+
+    def draw(self) -> None:
+        self.card_widget.draw()
+        self.upgrade_button.draw()
+
+
+class UpgradeScene(Scene):
+    def __init__(self, game_state: GameState) -> None:
+        super().__init__()
+        self.game_state = game_state
+        self.options: list[UpgradeCardOption] = []
+        self.pending_open = False
+        self.has_upgraded = False
+
+    def initOnce(self) -> None:
+        screen_rect = Rs.screenRect()
+        self.background = imageObj("background.png", screen_rect)
+        self.title = textObj("Enhance Cards", pos=(60, 60), size=52, color=Cs.white)
+        self.subtitle = textObj(
+            "Select one card to upgrade into its enhanced form.",
+            pos=(60, 120),
+            size=26,
+            color=Cs.lightgrey,
+        )
+        self.message = longTextObj(
+            "",
+            pos=RPoint(60, 200),
+            size=22,
+            color=Cs.white,
+            textWidth=460,
+        )
+        self.continue_button = textButton(
+            "Start Next Battle",
+            pygame.Rect(60, 760, 240, 70),
+            size=26,
+            radius=20,
+            color=Cs.mint,
+            textColor=Cs.black,
+        )
+        self.continue_button.connect(self.start_next_combat)
+        self.continue_button.enabled = False
+
+    def init(self) -> None:
+        if self.pending_open:
+            self._open_upgrade()
+
+    def queue_open(self) -> None:
+        self.pending_open = True
+        if getattr(self, "initiated", False):
+            self._open_upgrade()
+
+    def _open_upgrade(self) -> None:
+        self.pending_open = False
+        self.has_upgraded = False
+        self.message.text = (
+            "Choose one of your cards to enhance. The upgraded version replaces a copy in your deck."
+        )
+        self.continue_button.enabled = False
+        self.generate_options()
+
+    def generate_options(self) -> None:
+        self.options.clear()
+        seen: set[str] = set()
+        upgradable_keys: list[str] = []
+        for key in self.game_state.deck_blueprint:
+            upgraded_key = f"{key}_plus"
+            if upgraded_key in CARD_LIBRARY and key not in seen:
+                seen.add(key)
+                upgradable_keys.append(key)
+
+        if not upgradable_keys:
+            self.message.text = (
+                "No cards in your deck can be enhanced right now. Continue to the next battle."
+            )
+            self.continue_button.enabled = True
+            return
+
+        random.shuffle(upgradable_keys)
+        selected_keys = upgradable_keys[:3]
+
+        count = len(selected_keys)
+        spacing = 280
+        start_x = 520 - int((3 - count) * spacing / 2)
+        y = 260
+
+        self.options = []
+        for index, key in enumerate(selected_keys):
+            option = UpgradeCardOption(key, self)
+            option.set_position(start_x + index * spacing, y)
+            self.options.append(option)
+
+    def apply_upgrade(self, option: UpgradeCardOption) -> None:
+        if self.has_upgraded:
+            return
+        try:
+            index = self.game_state.deck_blueprint.index(option.base_key)
+        except ValueError:
+            self.message.text = "Could not find that card in your deck."
+            return
+
+        self.game_state.deck_blueprint[index] = option.upgraded_key
+        self.has_upgraded = True
+        option.mark_selected()
+        for other in self.options:
+            if other is not option:
+                other.mark_unavailable()
+
+        base_name = CARD_LIBRARY[option.base_key].name
+        upgraded_name = CARD_LIBRARY[option.upgraded_key].name
+        self.message.text = f"Upgraded {base_name} into {upgraded_name}!"
+        self.continue_button.enabled = True
+
+    def start_next_combat(self) -> None:
+        Scenes.mainScene.reset_combat()
+        Rs.setCurrentScene(Scenes.mainScene)
+
+    def update(self) -> None:
+        for option in self.options:
+            option.update()
+        self.continue_button.update()
+
+    def draw(self) -> None:
+        self.background.draw()
+        self.title.draw()
+        self.subtitle.draw()
+        self.message.draw()
+        for option in self.options:
+            option.draw()
+        self.continue_button.draw()
+
+
 class Scenes:
     game_state = GameState(deck_blueprint=list(INITIAL_DECK_BLUEPRINT))
     mainScene = DiceCardScene(game_state)
     shopScene = ShopScene(game_state)
+    upgradeScene = UpgradeScene(game_state)
 
 
 if __name__ == "__main__":
