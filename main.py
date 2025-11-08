@@ -826,12 +826,36 @@ class DiceCardScene(Scene):
                 self.add_log(
                     f"Tinker! Die {idx + 1} changed from {old} to {self.dice[idx]['value']}."
                 )
+        elif card.effect == "tinker_plus" and selection:
+            for idx in selection:
+                old = self.dice[idx]["value"]
+                self.dice[idx]["value"] = min(6, old + 2)
+                self.add_log(
+                    "Tinker+! Die {} boosted from {} to {}.".format(
+                        idx + 1, old, self.dice[idx]["value"]
+                    )
+                )
         elif card.effect == "reroll" and selection:
             for idx in selection:
                 old = self.dice[idx]["value"]
                 self.dice[idx]["value"] = random.randint(1, 6)
                 self.add_log(
                     f"Reroll! Die {idx + 1} rerolled from {old} to {self.dice[idx]['value']}."
+                )
+        elif card.effect == "reroll_plus" and selection:
+            for idx in selection:
+                old = self.dice[idx]["value"]
+                roll_one = random.randint(1, 6)
+                roll_two = random.randint(1, 6)
+                self.dice[idx]["value"] = max(roll_one, roll_two)
+                self.add_log(
+                    "Reroll+! Die {} rerolled from {} to {} ({} vs {}).".format(
+                        idx + 1,
+                        old,
+                        self.dice[idx]["value"],
+                        roll_one,
+                        roll_two,
+                    )
                 )
         elif card.effect == "odd_attack":
             damage = sum(die["value"] for die in self.dice if die["value"] % 2 == 1)
@@ -859,10 +883,24 @@ class DiceCardScene(Scene):
             damage = sum(die["value"] for die in self.dice)
             self.add_log(f"Strike! Attacking with total dice value {damage}.")
             self.deal_damage(damage, source="Strike")
+        elif card.effect == "strike_plus":
+            total = sum(die["value"] for die in self.dice)
+            damage = total + 6
+            self.add_log(
+                f"Strike+! Base {total} plus 6 bonus for {damage} damage."
+            )
+            self.deal_damage(damage, source="Strike+")
         elif card.effect == "fortify":
             block = sum(die["value"] for die in self.dice)
             self.player_block += block
             self.add_log(f"Fortify! Gained {block} block from the total dice.")
+        elif card.effect == "fortify_plus":
+            total = sum(die["value"] for die in self.dice)
+            block = total + 6
+            self.player_block += block
+            self.add_log(
+                f"Fortify+! Base {total} plus 6 bonus for {block} block."
+            )
         elif card.effect == "pair_shot":
             counts = Counter(die["value"] for die in self.dice)
             if any(count >= 2 for count in counts.values()):
@@ -871,11 +909,24 @@ class DiceCardScene(Scene):
                 self.deal_damage(damage, source="Pair Shot")
             else:
                 self.add_log("Pair Shot! No pair—attack failed.")
+        elif card.effect == "pair_shot_plus":
+            counts = Counter(die["value"] for die in self.dice)
+            if any(count >= 2 for count in counts.values()):
+                damage = 25
+                self.add_log("Pair Shot+! Enhanced pair hit for 25 damage.")
+                self.deal_damage(damage, source="Pair Shot+")
+            else:
+                self.add_log("Pair Shot+! No pair—attack failed.")
         elif card.effect == "one_shot":
             ones = sum(1 for die in self.dice if die["value"] == 1)
             damage = ones * 15
             self.add_log(f"One Shot! {ones} dice deal {damage} damage.")
             self.deal_damage(damage, source="One Shot")
+        elif card.effect == "one_shot_plus":
+            ones = sum(1 for die in self.dice if die["value"] == 1)
+            damage = ones * 20
+            self.add_log(f"One Shot+! {ones} dice deal {damage} damage.")
+            self.deal_damage(damage, source="One Shot+")
         elif card.effect == "double_guard":
             twos = sum(1 for die in self.dice if die["value"] == 2)
             block = twos * 10
@@ -884,6 +935,14 @@ class DiceCardScene(Scene):
                 self.add_log(f"Double Guard! {twos} dice grant {block} block.")
             else:
                 self.add_log("Double Guard! Not enough dice showing 2.")
+        elif card.effect == "double_guard_plus":
+            twos = sum(1 for die in self.dice if die["value"] == 2)
+            block = twos * 12
+            if block > 0:
+                self.player_block += block
+                self.add_log(f"Double Guard+! {twos} dice grant {block} block.")
+            else:
+                self.add_log("Double Guard+! Not enough dice showing 2.")
         else:
             self.add_log("The card effect failed to resolve.")
 

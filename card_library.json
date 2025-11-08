@@ -85,5 +85,51 @@
     "effect": "double_guard",
     "description": "Gain 10 block for each die showing 2.",
     "card_type": "Defense"
+  },
+  "tinker_plus": {
+    "name": "Tinker+",
+    "effect": "tinker_plus",
+    "description": "Increase the value of the selected dice by 2 (dice showing 5 become 6).",
+    "targets": 1,
+    "card_type": "Manipulation",
+    "allow_multi_select": true
+  },
+  "reroll_plus": {
+    "name": "Reroll+",
+    "effect": "reroll_plus",
+    "description": "Reroll the selected dice twice and keep the higher result.",
+    "targets": 1,
+    "card_type": "Manipulation",
+    "allow_multi_select": true
+  },
+  "strike_plus": {
+    "name": "Strike+",
+    "effect": "strike_plus",
+    "description": "Deal damage equal to the sum of all dice plus 6.",
+    "card_type": "Attack"
+  },
+  "fortify_plus": {
+    "name": "Fortify+",
+    "effect": "fortify_plus",
+    "description": "Gain block equal to the sum of all dice plus 6.",
+    "card_type": "Defense"
+  },
+  "pair_shot_plus": {
+    "name": "Pair Shot+",
+    "effect": "pair_shot_plus",
+    "description": "Deal 25 damage if you have any pair of dice.",
+    "card_type": "Attack"
+  },
+  "one_shot_plus": {
+    "name": "One Shot+",
+    "effect": "one_shot_plus",
+    "description": "Deal 20 damage for each die showing 1.",
+    "card_type": "Attack"
+  },
+  "double_guard_plus": {
+    "name": "Double Guard+",
+    "effect": "double_guard_plus",
+    "description": "Gain 12 block for each die showing 2.",
+    "card_type": "Defense"
   }
 }
