@@ -344,16 +344,13 @@ class DiceCardScene(Scene):
         dice_y = 180
         dice_spacing = 120
         self.dice: list[dict[str, Any]] = []
-        self.dice_buttons: list[textButton] = []
+        self.dice_buttons: list[imageButton] = []
         for i in range(5):
-            rect = pygame.Rect(dice_start_x + i * dice_spacing, dice_y, 100, 120)
-            button = textButton(
-                "1",
+            rect = pygame.Rect(dice_start_x + i * dice_spacing, dice_y, 100, 100)
+            button = imageButton(
+                "die_1.png",
                 rect,
-                size=48,
-                radius=24,
-                color=Cs.dark(Cs.blue),
-                textColor=Cs.white,
+                enableShadow=False,
             )
 
             def make_handler(index: int) -> Callable[[], None]:
@@ -361,7 +358,12 @@ class DiceCardScene(Scene):
 
             button.connect(make_handler(i))
             self.dice_buttons.append(button)
-            self.dice.append({"value": 1, "frozen": 0, "button": button})
+            self.dice.append({
+                "value": 1,
+                "frozen": 0,
+                "button": button,
+                "rect": rect.copy(),
+            })
 
         self.play_zone = rectObj(
             pygame.Rect(640, 360, 280, 180),
@@ -385,7 +387,7 @@ class DiceCardScene(Scene):
             color=Cs.white,
             textWidth=340,
         )
-        self.instruction_text = textObj("", pos=(40, 600), size=24, color=Cs.orange)
+        self.instruction_text = textObj("", pos=(40, 550), size=24, color=Cs.orange)
 
         self.end_turn_button = textButton(
             "End Turn",
@@ -399,7 +401,7 @@ class DiceCardScene(Scene):
 
         self.confirm_selection_button = textButton(
             "Confirm Selection",
-            pygame.Rect(980, 160, 180, 60),
+            pygame.Rect(1200, 160, 180, 60),
             size=26,
             radius=18,
             color=Cs.lime,
@@ -474,6 +476,7 @@ class DiceCardScene(Scene):
         self.update_dice_display()
 
     def draw_cards(self, count: int) -> None:
+        Rs.playSound("get_card.mp3")
         for _ in range(count):
             if not self.draw_pile:
                 self.reshuffle_discard()
@@ -517,13 +520,19 @@ class DiceCardScene(Scene):
     def update_dice_display(self) -> None:
         for idx, die in enumerate(self.dice):
             button = die["button"]
-            button.text = str(die["value"])
+            image_path = f"die_{die['value']}.png"
+            button.setImage(image_path)
+            target_rect: pygame.Rect | None = die.get("rect")
+            if target_rect is not None:
+                button.rect = target_rect
+            if hasattr(button, "hoverObj"):
+                button.hoverObj.setImage(image_path)
+                button.hoverObj.rect = button.offsetRect
+                button.hoverObj.colorize(Cs.white, alpha=60)
             if die["frozen"] > 0:
-                button.color = Cs.dark(Cs.cyan)
-            else:
-                button.color = Cs.dark(Cs.blue)
+                button.colorize(Cs.cyan, alpha=220)
             if self.pending_card and idx in self.pending_card.selected:
-                button.color = Cs.dark(Cs.purple)
+                button.colorize(Cs.purple, alpha=220)
 
     def update_interface(self) -> None:
         self.turn_label.text = f"Turn {self.turn_count}"
@@ -592,7 +601,7 @@ class DiceCardScene(Scene):
     def add_log(self, message: str) -> None:
         lines = self.log_box.text.split("\n") if self.log_box.text else []
         lines.append(message)
-        self.log_box.text = "\n".join(lines[-5:])
+        self.log_box.text = "\n".join(lines[-4:])
 
     def set_confirm_button_enabled(self, enabled: bool) -> None:
         self.confirm_selection_button.enabled = enabled
@@ -827,6 +836,7 @@ class DiceCardScene(Scene):
         if amount <= 0:
             self.add_log(f"{source}! The attack had no effect.")
             return
+        Rs.playSound("attack_sound.mp3")
         blocked = min(amount, self.enemy_block)
         if blocked:
             self.enemy_block -= blocked
