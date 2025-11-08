@@ -152,9 +152,12 @@ class HandCardWidget(rectObj):
         self.desc.centerx = self.offsetRect.centerx
         self.desc.y = self.illustration.rect.bottom + 22
 
+        self.pos = RPoint(1920,1080) - RPoint(100,100)
+
+
     def set_home(self, pos: RPoint) -> None:
         self.home_pos = RPoint(pos.x, pos.y)
-        self.pos = RPoint(pos.x, pos.y)
+        self.easeout("pos", self.home_pos,steps=20)
 
     def snap_home(self) -> None:
         self.pos = RPoint(self.home_pos.x, self.home_pos.y)
@@ -235,7 +238,7 @@ class DiceCardScene(Scene):
 
     def initOnce(self) -> None:
         screen_rect = Rs.screenRect()
-        self.background = rectObj(screen_rect, color=Cs.darkslategray)
+        self.background = imageObj("background.png", screen_rect)
 
         self.title = textObj("주사위 카드 로그라이크", pos=(40, 40), size=48, color=Cs.white)
         self.subtitle = textObj(
@@ -1004,7 +1007,7 @@ class ShopScene(Scene):
 
     def initOnce(self) -> None:
         screen_rect = Rs.screenRect()
-        self.background = rectObj(screen_rect, color=Cs.slategray)
+        self.background = imageObj("background.png", screen_rect)
         self.title = textObj("상점", pos=(60, 60), size=52, color=Cs.white)
         self.subtitle = textObj(
             "승리 보상으로 새로운 카드를 구매하세요!",
