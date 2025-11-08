@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import random
 from collections import Counter
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Any, Callable
 
 from REMOLib import *
@@ -21,103 +23,27 @@ class CardData:
         return replace(self)
 
 
-CARD_LIBRARY: dict[str, CardData] = {
-    "clone": CardData(
-        name="눈 복제",
-        effect="clone",
-        description="주사위 2개를 선택한 뒤, 첫 주사위의 눈을 나중 주사위에 복제한다.",
-        targets=2,
-        card_type="조작",
-    ),
-    "mirror": CardData(
-        name="미러 주사위",
-        effect="mirror",
-        description="선택한 주사위들을 반전한다 (1↔6, 2↔5, 3↔4).",
-        targets=1,
-        card_type="조작",
-        allow_multi_select=True,
-    ),
-    "stasis": CardData(
-        name="Stasis",
-        effect="stasis",
-        description="선택한 주사위들을 다음 턴 시작까지 고정한다.",
-        targets=1,
-        card_type="조작",
-        allow_multi_select=True,
-    ),
-    "tinker": CardData(
-        name="Tinker",
-        effect="tinker",
-        description="선택한 주사위의 눈을 1 올린다. (6은 그대로)",
-        targets=1,
-        card_type="조작",
-        allow_multi_select=True,
-    ),
-    "reroll": CardData(
-        name="Reroll",
-        effect="reroll",
-        description="선택한 주사위들을 다시 굴립니다.",
-        targets=1,
-        card_type="조작",
-        allow_multi_select=True,
-    ),
-    "odd_attack": CardData(
-        name="Odd Attack",
-        effect="odd_attack",
-        description="현재 보유한 홀수 주사위 눈의 합만큼 적을 공격한다.",
-        targets=0,
-        card_type="공격",
-    ),
-    "even_shield": CardData(
-        name="Even Shield",
-        effect="even_shield",
-        description="현재 보유한 짝수 주사위 눈의 합만큼 방어력을 얻는다.",
-        targets=0,
-        card_type="방어",
-    ),
-    "strafe": CardData(
-        name="스트레이프",
-        effect="strafe",
-        description="Small Straight일 경우 30, Big Straight일 경우 60 데미지",
-        targets=0,
-        card_type="공격",
-    ),
-    "strike": CardData(
-        name="스트라이크",
-        effect="strike",
-        description="주사위의 합으로 공격한다.",
-        targets=0,
-        card_type="공격",
-    ),
-    "fortify": CardData(
-        name="Fortify",
-        effect="fortify",
-        description="주사위의 합으로 방어한다.",
-        targets=0,
-        card_type="방어",
-    ),
-    "pair_shot": CardData(
-        name="Pair Shot",
-        effect="pair_shot",
-        description="주사위가 페어일 경우 15 데미지",
-        targets=0,
-        card_type="공격",
-    ),
-    "one_shot": CardData(
-        name="One Shot",
-        effect="one_shot",
-        description="1 주사위당 15 데미지",
-        targets=0,
-        card_type="공격",
-    ),
-    "double_guard": CardData(
-        name="Double Guard",
-        effect="double_guard",
-        description="2 주사위당 10 방어",
-        targets=0,
-        card_type="방어",
-    ),
-}
+def load_card_library(path: Path) -> dict[str, CardData]:
+    with path.open(encoding="utf-8") as card_file:
+        data = json.load(card_file)
+
+    library: dict[str, CardData] = {}
+    for key, value in data.items():
+        library[key] = CardData(
+            name=value["name"],
+            effect=value["effect"],
+            description=value["description"],
+            targets=value.get("targets", 0),
+            card_type=value.get("card_type", "Utility"),
+            allow_multi_select=value.get("allow_multi_select", False),
+        )
+
+    return library
+
+
+CARD_LIBRARY: dict[str, CardData] = load_card_library(
+    Path(__file__).with_name("card_library.json")
+)
 
 
 @dataclass
