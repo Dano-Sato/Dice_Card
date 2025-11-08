@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import random
 from collections import Counter
 from dataclasses import dataclass, replace
@@ -154,15 +155,39 @@ class HandCardWidget(rectObj):
 
         self.pos = RPoint(1920,1080) - RPoint(100,100)
 
+        self._has_home = False
+        self._float_amplitude = random.uniform(2,4)
+        self._float_frequency = random.uniform(0.6, 0.9)
+        self._float_speed = self._float_frequency * 2 * math.pi
+        self._float_phase = random.uniform(0, 2 * math.pi)
+
 
     def set_home(self, pos: RPoint) -> None:
         self.home_pos = RPoint(pos.x, pos.y)
+        self._has_home = True
         self.easeout("pos", self.home_pos,steps=20)
 
     def snap_home(self) -> None:
         self.pos = RPoint(self.home_pos.x, self.home_pos.y)
 
+    def _update_idle_motion(self) -> None:
+        if (
+            not self.scene
+            or not self._has_home
+            or self.dragging
+            or self.onInterpolation()
+        ):
+            return
+
+        time_seconds = pygame.time.get_ticks() / 1000.0
+        offset = math.sin(self._float_phase + time_seconds * self._float_speed)
+        offset *= self._float_amplitude
+        target_pos = RPoint(self.home_pos.x, self.home_pos.y + offset)
+        if self.pos != target_pos:
+            self.pos = target_pos
+
     def handle_events(self) -> None:
+        self._update_idle_motion()
         is_hovered = self.collideMouse()
         if self.scene is None:
             if is_hovered:
