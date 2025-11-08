@@ -67,6 +67,8 @@ INITIAL_DECK_BLUEPRINT: list[str] = (
     + ["fortify"] * 3
     + ["strafe"] * 3
     + ["pair_shot"] * 3
+    + ["one_shot"] * 3
+    + ["double_guard"] * 3
 )
 
 
