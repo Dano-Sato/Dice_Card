@@ -32,7 +32,7 @@ CARD_LIBRARY: dict[str, CardData] = {
     "mirror": CardData(
         name="미러 주사위",
         effect="mirror",
-        description="선택한 주사위를 반전한다 (1↔6, 2↔5, 3↔4).",
+        description="선택한 주사위들을 반전한다 (1↔6, 2↔5, 3↔4).",
         targets=1,
         card_type="조작",
         allow_multi_select=True,
@@ -40,7 +40,7 @@ CARD_LIBRARY: dict[str, CardData] = {
     "stasis": CardData(
         name="Stasis",
         effect="stasis",
-        description="선택한 주사위를 다음 턴 시작까지 고정한다.",
+        description="선택한 주사위들을 다음 턴 시작까지 고정한다.",
         targets=1,
         card_type="조작",
         allow_multi_select=True,
@@ -56,7 +56,7 @@ CARD_LIBRARY: dict[str, CardData] = {
     "reroll": CardData(
         name="Reroll",
         effect="reroll",
-        description="선택한 주사위를 다시 굴립니다.",
+        description="선택한 주사위들을 다시 굴립니다.",
         targets=1,
         card_type="조작",
         allow_multi_select=True,
@@ -134,7 +134,13 @@ INITIAL_DECK_BLUEPRINT: list[str] = (
     + ["odd_attack"] * 3
     + ["even_shield"] * 3
     + ["clone"] * 3
-
+    + ["mirror"] * 3
+    + ["stasis"] * 3
+    + ["tinker"] * 3
+    + ["strike"] * 3
+    + ["fortify"] * 3
+    + ["strafe"] * 3
+    + ["pair_shot"] * 3
 )
 
 
@@ -182,8 +188,9 @@ class HandCardWidget(rectObj):
             color=self.base_color,
             radius=18,
         )
-        self.color_overlay.alpha = 110
         self.color_overlay.setParent(self, depth=1)
+        self.color_overlay.alpha = 60
+
         self.color_overlay.center = self.offsetRect.center
 
         self.title = textObj(card.name, size=26, color=Cs.white)
@@ -202,7 +209,7 @@ class HandCardWidget(rectObj):
         self.illustration.scale = illus_scale *1.2
         self.illustration.setParent(self, depth=0)
         self.illustration.centerx = self.offsetRect.centerx
-        self.illustration.y = self.title.rect.bottom + 12
+        self.illustration.y = self.title.rect.bottom + 17
 
         self.desc = longTextObj(
             card.description,
@@ -226,10 +233,10 @@ class HandCardWidget(rectObj):
         is_hovered = self.collideMouse()
         if self.dragging or is_hovered:
             self.color_overlay.color = self.hover_color
-            self.color_overlay.alpha = 140
+            self.color_overlay.alpha = 80
         else:
             self.color_overlay.color = self.base_color
-            self.color_overlay.alpha = 110
+            self.color_overlay.alpha = 60
 
         if self.scene.game_over:
             return
