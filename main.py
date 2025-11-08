@@ -949,7 +949,6 @@ class DiceCardScene(Scene):
             self.enemy_block += intent_value
             self.add_log(f"Enemy gained {intent_value} block.")
 
-        self.player_block = 0
         if self.player_hp <= 0:
             self.on_defeat()
             self.update_interface()
