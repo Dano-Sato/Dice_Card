@@ -25,7 +25,7 @@ CARD_LIBRARY: dict[str, CardData] = {
     "clone": CardData(
         name="눈 복제",
         effect="clone",
-        description="주사위 2개를 선택한 뒤, 왼쪽 주사위의 눈을 오른쪽 주사위로 바꾼다.",
+        description="주사위 2개를 선택한 뒤, 첫 주사위의 눈을 나중 주사위에 복제한다.",
         targets=2,
         card_type="조작",
     ),
@@ -50,7 +50,7 @@ CARD_LIBRARY: dict[str, CardData] = {
         effect="tinker",
         description="선택한 주사위의 눈을 1 올린다. (6은 그대로)",
         targets=1,
-        card_type="강화",
+        card_type="조작",
         allow_multi_select=True,
     ),
     "reroll": CardData(
@@ -130,9 +130,10 @@ class GameState:
 
 
 INITIAL_DECK_BLUEPRINT: list[str] = (
-    ["reroll"] * 5
-    + ["odd_attack"] * 5
-    + ["even_shield"] * 5
+    ["reroll"] * 3
+    + ["odd_attack"] * 3
+    + ["even_shield"] * 3
+    + ["clone"] * 3
 
 )
 
@@ -1147,8 +1148,8 @@ class Scenes:
 
 if __name__ == "__main__":
     window = REMOGame(
-        window_resolution=(1600, 900),
-        screen_size=(1600, 900),
+        window_resolution=(1920,1080),
+        screen_size=(1920, 1080),
         fullscreen=False,
         caption="Dice Card Roguelike",
     )
