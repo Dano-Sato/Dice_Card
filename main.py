@@ -233,6 +233,9 @@ class HandCardWidget(rectObj):
 
 
 class PendingCard:
+    '''
+    카드 중 주사위 n개를 선택하는 카드를 위한 추가 페이즈
+    '''
     def __init__(self, card: CardData, required: int, allow_multi: bool) -> None:
         self.card = card
         self.required = required
@@ -268,7 +271,7 @@ class DiceCardScene(Scene):
 
     def initOnce(self) -> None:
         
-        Rs.playMusic("bgm.mp3")
+        #Rs.playMusic("bgm.mp3")
 
         screen_rect = Rs.screenRect()
         self.background = imageObj("background.png", screen_rect)
@@ -530,9 +533,9 @@ class DiceCardScene(Scene):
         Rs.playSound("get_card.mp3")
         for _ in range(count):
             if not self.draw_pile:
-                self.reshuffle_discard()
+                self.reshuffle_discard() # Try to reshuffle if draw pile is empty.
             if not self.draw_pile:
-                break
+                break # Still empty, can't draw more.
             card = self.draw_pile.pop()
             self.hand.append(card)
             widget = HandCardWidget(card, self)
